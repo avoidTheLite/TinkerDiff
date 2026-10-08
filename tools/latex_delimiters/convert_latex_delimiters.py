@@ -154,6 +154,8 @@ def verify_conversion(original_text, converted_text):
 def lint_github_math(text):
     """Warnings for constructs GitHub's math renderer commonly mishandles."""
     warnings = []
+    # Blank out code (keeping line structure) so documented examples are not linted.
+    text = "".join(re.sub(r"[^\n]", " ", seg) if is_code else seg for is_code, seg in split_code(text))
     for n, line in enumerate(text.split("\n"), 1):
         if line.lstrip().startswith("|"):
             for m in NEW_RE.finditer(line):
