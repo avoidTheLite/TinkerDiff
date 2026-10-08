@@ -1,6 +1,6 @@
 # Example: Cloud Service Uptime (SRE)
 
-A worked risk calculation for a three-tier cloud service, showing a Vortex with an epistemic distribution, a \(k\)-of-\(N\) compute tier, a failover database tier, and the resulting risk distribution in dollars. The machine-readable model is [`../schema/examples/cloud-service.json`](../schema/examples/cloud-service.json). The figures below are reproduced in [`../conformance/vectors.json`](../conformance/vectors.json).
+A worked risk calculation for a three-tier cloud service, showing a Vortex with an epistemic distribution, a \(k\)-of-\(N\) compute tier, a failover database tier, and the resulting risk distribution in dollars. The machine-readable model is [`../schema/examples/cloud-service.json`](../schema/examples/cloud-service.json). Its failure-mode hazard rates are set so that each node reproduces the availabilities below over the 30-day horizon, and the figures are reproduced in [`../conformance/vectors.json`](../conformance/vectors.json).
 
 Prerequisites: [02 Risk Model](../02-risk-model.md), [04 Vortex Components](../04-vortex-black-box-components.md).
 
@@ -84,7 +84,17 @@ A point-SLA calculation that multiplies advertised figures (0.9999 for the CDN) 
 
 ## 5. Failure Modes in the Model
 
-The EC2 worker Subassembly in the schema example includes three modes:
+In `cloud-service.json` each availability zone is a Subassembly with two hazard-driven modes (the Lambda runner and the EC2 worker), so its availability is the competing-risk product of [03 §4](../03-failure-modes.md) and equals \(0.9995 \times 0.999\). The database primary and standby each have one mode. The top-level structure is
+
+```
+all( cdn,
+     k_of_n(k=2, az1, az2, az3),
+     failover(p=0.95, db-primary, db-standby) )
+```
+
+with a top-event consequence of \$10,000 per hour of unavailability.
+
+A second model, [`../schema/examples/ec2-worker-escalation.json`](../schema/examples/ec2-worker-escalation.json), shows state-driven modeling of an EC2 worker with three modes:
 
 | Mode | Mechanism | Driving Element |
 |------|-----------|-----------------|
@@ -92,4 +102,4 @@ The EC2 worker Subassembly in the schema example includes three modes:
 | Connection starvation | `ResistiveThrottle` | `connection_path` (Resistance) |
 | Thread-pool starvation | `InductiveMomentumCollapse` | `thread_pool` (Inductance) |
 
-Their combination follows [03 §4](../03-failure-modes.md), and a rising hazard in one mode is attributed using [03 §5](../03-failure-modes.md).
+That model also demonstrates uncertain impact weights, coupled-mode probability flow, and an escalation boundary to an inference-class Vortex.

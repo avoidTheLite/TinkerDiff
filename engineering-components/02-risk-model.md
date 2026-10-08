@@ -32,6 +32,11 @@ Consequences are expressed in the system's declared **impact unit** (`impact_uni
 
 Consequences may be per occurrence, or per unit time with a recovery time (for example dollars per hour of outage multiplied by time to recover); both are distributions.
 
+Two equivalent views of the same quantity are supported:
+
+- **Event view:** each scenario has a probability \(p_i\) and a consequence \(X_i\) per occurrence, as above.
+- **Availability view:** a component or the whole system has an expected availability \(E[A]\) over horizon \(T\) and a cost rate \(c\) per unit of unavailable time, giving \(E[\mathcal{R}] = c\,(1 - E[A])\,T\). In the schema this is a consequence with basis `per_unit_time` and no recovery time.
+
 ### 1.2 Risk Output
 
 An engine reports:
@@ -147,9 +152,24 @@ f_Z(z) = \int f_X(x)\, f_Y\!\left(\frac{z}{x}\right)\frac{dx}{|x|}
 
 Equivalently, \(\ln Z\) is the sum \(\ln X + \ln Y\). Engines may evaluate these by Monte Carlo sampling rather than by integration.
 
-## 5. Propagation Across the Topology
+## 5. System Structure and Propagation
 
-Failure probabilities at one node feed other nodes through the impact matrix \(\mathbf{W}\) ([05](05-execution-model.md) §3.3). The consequence of each node's failure is counted once, at that node, to avoid double counting; correlated failure across nodes is captured by the propagation weights and by common-cause groups, and its effect on the distribution of \(\mathcal{R}\) is obtained by joint sampling.
+### 5.1 Top Event
+
+A system declares a **top event** (for example "service unavailable") with two parts:
+
+- a **structure**: success logic over nodes, built recursively from `all` (series), `any` (1-of-N), `k_of_n`, and `failover` operators using the rules of §4, with an optional common-cause factor on an operator;
+- a **consequence** of the top event failing.
+
+The availability of each node is its survival probability over the horizon: the competing-risk product over its failure modes for a Subassembly ([03](03-failure-modes.md) §4), or the sampled reliability for a Vortex ([04](04-vortex-black-box-components.md) §3.2). Node availabilities are then combined through the structure.
+
+### 5.2 Propagation
+
+Failure probabilities at one node feed other nodes through the impact matrix \(\mathbf{W}\) ([05](05-execution-model.md) §3.3).
+
+### 5.3 Avoiding Double Counting
+
+Consequences exist at two levels: direct losses attached to a node or failure mode (for example repair cost), and the top-event consequence (for example revenue lost while the service is down). A model should put each loss at exactly one level. Correlated failure across nodes comes from the propagation weights and common-cause factors, and its effect on the distribution of \(\mathcal{R}\) is obtained by joint sampling.
 
 ## 6. Comparison with Point-SLA Methods
 

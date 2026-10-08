@@ -1,0 +1,641 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tinkerdiff.schema.json",
+  "title": "TinkerDiff System Model",
+  "description": "Normative object model for a TinkerDiff system: Subassemblies of Elements, Vortices (black-box components), Fittings, success logic, and evaluation policy. The root validates a system model; #/$defs/EvaluationResult validates engine output.",
+  "type": "object",
+  "required": ["schema_version", "system_id", "impact_unit", "evaluation", "nodes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of this schema the model was written against."
+    },
+    "system_id": { "$ref": "#/$defs/Identifier" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "impact_unit": { "$ref": "#/$defs/ImpactUnit" },
+    "evaluation": { "$ref": "#/$defs/Evaluation" },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/Subassembly" },
+          { "$ref": "#/$defs/Vortex" }
+        ]
+      },
+      "description": "Subassemblies and Vortices. node_id values must be unique across the model."
+    },
+    "connections": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Fitting" },
+      "description": "Fittings wiring node interfaces together."
+    },
+    "top_event": { "$ref": "#/$defs/TopEvent" }
+  },
+
+  "$defs": {
+
+    "Identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+    },
+
+    "Probability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+
+    "Distribution": {
+      "description": "A probability distribution. Parameter names per family: Point{value}, Beta{alpha,beta}, Normal{mean,std_dev}, Lognormal{mu,sigma} (log-space), Gamma{shape,rate}, Weibull{shape,scale}, Exponential{rate}, Uniform{min,max}.",
+      "type": "object",
+      "required": ["family", "parameters"],
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "enum": ["Point", "Beta", "Normal", "Lognormal", "Gamma", "Weibull", "Exponential", "Uniform"]
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "family": { "const": "Point" } }, "required": ["family"] },
+          "then": { "properties": { "parameters": {
+            "required": ["value"], "additionalProperties": false,
+            "properties": { "value": { "type": "number" } } } } }
+        },
+        {
+          "if": { "properties": { "family": { "const": "Beta" } }, "required": ["family"] },
+          "then": { "properties": { "parameters": {
+            "required": ["alpha", "beta"], "additionalProperties": false,
+            "properties": {
+              "alpha": { "type": "number", "exclusiveMinimum": 0 },
+              "beta": { "type": "number", "exclusiveMinimum": 0 } } } } }
+        },
+        {
+          "if": { "properties": { "family": { "const": "Normal" } }, "required": ["family"] },
+          "then": { "properties": { "parameters": {
+            "required": ["mean", "std_dev"], "additionalProperties": false,
+            "properties": {
+              "mean": { "type": "number" },
+              "std_dev": { "type": "number", "exclusiveMinimum": 0 } } } } }
+        },
+        {
+          "if": { "properties": { "family": { "const": "Lognormal" } }, "required": ["family"] },
+          "then": { "properties": { "parameters": {
+            "required": ["mu", "sigma"], "additionalProperties": false,
+            "properties": {
+              "mu": { "type": "number" },
+              "sigma": { "type": "number", "exclusiveMinimum": 0 } } } } }
+        },
+        {
+          "if": { "properties": { "family": { "const": "Gamma" } }, "required": ["family"] },
+          "then": { "properties": { "parameters": {
+            "required": ["shape", "rate"], "additionalProperties": false,
+            "properties": {
+              "shape": { "type": "number", "exclusiveMinimum": 0 },
+              "rate": { "type": "number", "exclusiveMinimum": 0 } } } } }
+        },
+        {
+          "if": { "properties": { "family": { "const": "Weibull" } }, "required": ["family"] },
+          "then": { "properties": { "parameters": {
+            "required": ["shape", "scale"], "additionalProperties": false,
+            "properties": {
+              "shape": { "type": "number", "exclusiveMinimum": 0 },
+              "scale": { "type": "number", "exclusiveMinimum": 0 } } } } }
+        },
+        {
+          "if": { "properties": { "family": { "const": "Exponential" } }, "required": ["family"] },
+          "then": { "properties": { "parameters": {
+            "required": ["rate"], "additionalProperties": false,
+            "properties": { "rate": { "type": "number", "exclusiveMinimum": 0 } } } } }
+        },
+        {
+          "if": { "properties": { "family": { "const": "Uniform" } }, "required": ["family"] },
+          "then": { "properties": { "parameters": {
+            "required": ["min", "max"], "additionalProperties": false,
+            "properties": {
+              "min": { "type": "number" },
+              "max": { "type": "number" } } } } }
+        }
+      ]
+    },
+
+    "ProbabilityOrDistribution": {
+      "description": "A fixed probability, or a distribution on [0, 1] (normally Beta, Uniform, or Point) when the value is uncertain.",
+      "oneOf": [
+        { "$ref": "#/$defs/Probability" },
+        { "$ref": "#/$defs/Distribution" }
+      ]
+    },
+
+    "ImpactUnit": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "description": "Unit symbol, for example USD, lost_requests, user_minutes." },
+        "description": { "type": "string" }
+      }
+    },
+
+    "ImpactModel": {
+      "description": "Consequence of an event, in the system impact unit. per_occurrence: a cost per event. per_unit_time: a cost per time_unit of unavailability; the unavailable duration is recovery_time_sec per occurrence when given, otherwise the expected unavailable time in the horizon.",
+      "type": "object",
+      "required": ["amount"],
+      "additionalProperties": false,
+      "properties": {
+        "amount": { "$ref": "#/$defs/Distribution" },
+        "basis": { "enum": ["per_occurrence", "per_unit_time"], "default": "per_occurrence" },
+        "time_unit": { "enum": ["second", "minute", "hour", "day"] },
+        "recovery_time_sec": { "$ref": "#/$defs/Distribution" }
+      },
+      "if": { "properties": { "basis": { "const": "per_unit_time" } }, "required": ["basis"] },
+      "then": { "required": ["time_unit"] }
+    },
+
+    "Element": {
+      "description": "Atomic unit: one base relation (see 01-foundations). Capacitance e'=f/C-gamma*e; inductance f'=e/I-gamma*f; resistance e=R*f; transformer e2=n*e1, f1=n*f2.",
+      "type": "object",
+      "required": ["element_id", "element_type", "coefficient"],
+      "additionalProperties": false,
+      "properties": {
+        "element_id": { "$ref": "#/$defs/Identifier" },
+        "element_type": { "enum": ["capacitance", "inductance", "resistance", "transformer"] },
+        "coefficient": { "type": "number", "exclusiveMinimum": 0, "description": "C, I, R, or n depending on element_type." },
+        "effort_unit": { "type": "string" },
+        "flow_unit": { "type": "string" },
+        "initial_state": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "effort": { "type": "number" },
+            "flow": { "type": "number" }
+          }
+        },
+        "capacity_limit": { "type": "number", "exclusiveMinimum": 0, "description": "Maximum of the stored quantity; defines the saturation ratio in [0, 1]." },
+        "damping_leak_coefficient": { "type": "number", "minimum": 0, "default": 0, "description": "Leak/damping rate gamma, in 1/s." }
+      }
+    },
+
+    "Port": {
+      "type": "object",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/Identifier" },
+        "type": { "type": "string", "description": "Data type or unit carried by the port." },
+        "range": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "min": { "type": "number" }, "max": { "type": "number" } }
+        },
+        "description": { "type": "string" }
+      }
+    },
+
+    "Endpoint": {
+      "type": "object",
+      "required": ["node_id"],
+      "additionalProperties": false,
+      "properties": {
+        "node_id": { "$ref": "#/$defs/Identifier" },
+        "element_id": { "$ref": "#/$defs/Identifier" },
+        "port": { "$ref": "#/$defs/Identifier" }
+      }
+    },
+
+    "Fitting": {
+      "description": "Adapter between two interfaces. type ratio applies e2=n*e1, f1=n*f2 with n=ratio.",
+      "type": "object",
+      "required": ["fitting_id", "from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "fitting_id": { "$ref": "#/$defs/Identifier" },
+        "from": { "$ref": "#/$defs/Endpoint" },
+        "to": { "$ref": "#/$defs/Endpoint" },
+        "transform": {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "enum": ["identity", "ratio", "signal_mapping"], "default": "identity" },
+            "ratio": { "type": "number", "exclusiveMinimum": 0 },
+            "description": { "type": "string" }
+          },
+          "if": { "properties": { "type": { "const": "ratio" } }, "required": ["type"] },
+          "then": { "required": ["ratio"] }
+        }
+      }
+    },
+
+    "HazardDriver": {
+      "description": "One term of the hazard multiplier D(t)=exp(sum w*g(signal)).",
+      "type": "object",
+      "required": ["signal", "weight", "transform"],
+      "additionalProperties": false,
+      "properties": {
+        "signal": { "type": "string", "description": "Telemetry signal name, for example memory_pressure." },
+        "weight": { "type": "number" },
+        "transform": { "enum": ["level", "derivative", "integral"] }
+      }
+    },
+
+    "FailureMode": {
+      "description": "One parallel failure channel (see 03-failure-modes). At least one of fragility and baseline_hazard is required. Mode probability: F = 1 - (1 - F_fragility(P)) * (1 - F_hazard(t)), omitting a part that is absent.",
+      "type": "object",
+      "required": ["mode_id", "name", "mechanism", "element_ref", "rupture_threshold", "consequence"],
+      "additionalProperties": false,
+      "properties": {
+        "mode_id": { "$ref": "#/$defs/Identifier" },
+        "name": { "type": "string" },
+        "mechanism": { "enum": ["CapacitiveAccumulation", "ResistiveThrottle", "InductiveMomentumCollapse"] },
+        "element_ref": { "$ref": "#/$defs/Identifier", "description": "element_id, within the same Subassembly, whose state drives the mode." },
+        "rupture_threshold": { "$ref": "#/$defs/Probability", "description": "Saturation ratio at which the mode trips (hard failure)." },
+        "fragility": {
+          "description": "State-driven probability as a function of normalized pressure: F=1-exp(-(P/scale)^shape).",
+          "allOf": [
+            { "$ref": "#/$defs/Distribution" },
+            { "properties": { "family": { "const": "Weibull" } } }
+          ]
+        },
+        "baseline_hazard": {
+          "type": "object",
+          "required": ["rate_per_sec"],
+          "additionalProperties": false,
+          "properties": {
+            "rate_per_sec": {
+              "description": "Baseline hazard rate lambda_0 in 1/s, fixed or as a distribution (Gamma or Lognormal) when uncertain.",
+              "oneOf": [
+                { "type": "number", "minimum": 0 },
+                { "$ref": "#/$defs/Distribution" }
+              ]
+            },
+            "multiplier": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/HazardDriver" },
+              "description": "Drivers of D(t); empty or absent means D(t)=1."
+            }
+          }
+        },
+        "consequence": { "$ref": "#/$defs/ImpactModel" }
+      },
+      "anyOf": [
+        { "required": ["fragility"] },
+        { "required": ["baseline_hazard"] }
+      ]
+    },
+
+    "ProbabilityFlow": {
+      "description": "Coupled-mode probability-flow configuration (see 05-execution-model section 4). Absent means modes are treated as independent.",
+      "type": "object",
+      "required": ["independent_dimensions", "advection_drift_vector", "diffusion_tensor", "reaction_cross_coupling_matrix", "solver"],
+      "additionalProperties": false,
+      "properties": {
+        "independent_dimensions": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "advection_drift_vector": { "type": "array", "items": { "type": "number" } },
+        "diffusion_tensor": { "type": "array", "items": { "type": "array", "items": { "type": "number" } } },
+        "reaction_cross_coupling_matrix": { "type": "array", "items": { "type": "array", "items": { "type": "number" } } },
+        "solver": { "enum": ["ClosedFormConstantCoefficient", "LaplaceNumericalInversion", "NumericalPDE"] }
+      }
+    },
+
+    "Propagation": {
+      "description": "Impact matrix W. Rows correspond to targets, columns to inputs: S = W F. Dimensions must be len(targets) x len(inputs).",
+      "type": "object",
+      "required": ["inputs", "targets", "weights"],
+      "additionalProperties": false,
+      "properties": {
+        "inputs": {
+          "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Identifier" },
+          "description": "Ordered mode_ids whose failure probabilities form the input vector F."
+        },
+        "targets": {
+          "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Identifier" },
+          "description": "Ordered node_ids that receive propagated failure probability."
+        },
+        "weights": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ProbabilityOrDistribution" } }
+        },
+        "mode": { "enum": ["linear", "noisy_or"], "default": "linear" }
+      }
+    },
+
+    "Escalation": {
+      "description": "Non-determinism boundary (see 04 section 5).",
+      "type": "object",
+      "required": ["max_allowable_risk_entropy", "vortex_ref"],
+      "additionalProperties": false,
+      "properties": {
+        "max_allowable_risk_entropy": { "type": "number", "minimum": 0, "maximum": 1 },
+        "vortex_ref": { "$ref": "#/$defs/Identifier", "description": "node_id of an inference-class Vortex." },
+        "mutation_target": { "type": "string", "default": "propagation.weights", "description": "Path, relative to the Subassembly, the Vortex may change." },
+        "max_weight_delta": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "RecalibrationPolicy": {
+      "description": "Drift control (see 06).",
+      "type": "object",
+      "required": ["schedule", "base_quantization_tier", "drift_model", "accuracy"],
+      "additionalProperties": false,
+      "properties": {
+        "schedule": {
+          "type": "string",
+          "pattern": "^\\S+( \\S+){4,5}$",
+          "description": "Cron expression (UTC): five fields, or six with a leading seconds field. Example: '*/15 * * * *'."
+        },
+        "base_quantization_tier": {
+          "enum": ["Boolean", "Algebraic", "MatrixMesh", "NumericalPDE"],
+          "description": "Highest deterministic tier used between recalibrations."
+        },
+        "drift_model": {
+          "type": "object",
+          "required": ["base_drift_variance", "growth_time_constant_sec"],
+          "additionalProperties": false,
+          "properties": {
+            "base_drift_variance": { "type": "number", "exclusiveMinimum": 0, "description": "d0 in v(delta)=d0*exp(delta/tau)." },
+            "growth_time_constant_sec": { "type": "number", "exclusiveMinimum": 0, "description": "tau." }
+          }
+        },
+        "accuracy": {
+          "type": "object",
+          "required": ["error_tolerance", "minimum_confidence", "remediation"],
+          "additionalProperties": false,
+          "properties": {
+            "error_tolerance": { "type": "number", "exclusiveMinimum": 0 },
+            "minimum_confidence": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+            "remediation": { "enum": ["ForceDirectIntegration", "EscalateToVortex"] }
+          }
+        },
+        "missed_tick_policy": { "enum": ["accumulate", "run_late"], "default": "accumulate" }
+      }
+    },
+
+    "Evaluation": {
+      "type": "object",
+      "required": ["horizon_sec", "sampling_interval_sec", "recalibration"],
+      "additionalProperties": false,
+      "properties": {
+        "horizon_sec": { "type": "number", "exclusiveMinimum": 0 },
+        "sampling_interval_sec": { "type": "number", "exclusiveMinimum": 0, "description": "Default log-interval delta between incremental updates." },
+        "recalibration": { "$ref": "#/$defs/RecalibrationPolicy" },
+        "risk_measures": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "quantiles": { "type": "array", "items": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 }, "default": [0.5, 0.95, 0.99] },
+            "tail_measure": { "enum": ["none", "cvar"], "default": "none" },
+            "tail_level": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 }
+          }
+        },
+        "random_seed": { "type": "integer" }
+      }
+    },
+
+    "Subassembly": {
+      "description": "A group of Elements modeling one real component.",
+      "type": "object",
+      "required": ["kind", "node_id", "name", "elements", "failure_modes"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "subassembly" },
+        "node_id": { "$ref": "#/$defs/Identifier" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "description": "Free-form classification, for example ComputeNode, DatabaseNode." },
+        "source_reference": {
+          "type": "object",
+          "required": ["format", "id"],
+          "additionalProperties": false,
+          "properties": {
+            "format": { "enum": ["UML-XMI", "JSON-manifest", "other"] },
+            "id": { "type": "string" },
+            "path": { "type": "string" }
+          }
+        },
+        "interfaces": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "provided": { "type": "array", "items": { "type": "string" } },
+            "required": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "elements": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Element" } },
+        "internal_connections": { "type": "array", "items": { "$ref": "#/$defs/Fitting" } },
+        "numerical_integrator": {
+          "type": "object",
+          "required": ["method", "time_step_ms"],
+          "additionalProperties": false,
+          "properties": {
+            "method": { "enum": ["Euler", "Runge-Kutta-4", "Verlet"] },
+            "time_step_ms": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "failure_modes": { "type": "array", "items": { "$ref": "#/$defs/FailureMode" } },
+        "probability_flow": { "$ref": "#/$defs/ProbabilityFlow" },
+        "propagation": { "$ref": "#/$defs/Propagation" },
+        "escalation": { "$ref": "#/$defs/Escalation" },
+        "recalibration": { "$ref": "#/$defs/RecalibrationPolicy", "description": "Overrides evaluation.recalibration for this node." }
+      }
+    },
+
+    "Vortex": {
+      "description": "A black-box component (see 04). Requires an I/O contract, a reliability distribution, and a consequence.",
+      "type": "object",
+      "required": ["kind", "node_id", "name", "vortex_class", "io_contract", "uncertainty", "consequence"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "vortex" },
+        "node_id": { "$ref": "#/$defs/Identifier" },
+        "name": { "type": "string" },
+        "vortex_class": { "enum": ["opaque_system", "inference"] },
+        "io_contract": {
+          "type": "object",
+          "required": ["inputs", "outputs"],
+          "additionalProperties": false,
+          "properties": {
+            "inputs": { "type": "array", "items": { "$ref": "#/$defs/Port" } },
+            "outputs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Port" } },
+            "advertised": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Provider claims; not evidence and not used as the prior mean.",
+              "properties": {
+                "availability": { "$ref": "#/$defs/Probability" },
+                "notes": { "type": "string" }
+              }
+            }
+          }
+        },
+        "uncertainty": {
+          "type": "object",
+          "required": ["reliability"],
+          "additionalProperties": false,
+          "properties": {
+            "reliability": {
+              "description": "Probability of meeting the I/O contract over the horizon. Mandatory.",
+              "$ref": "#/$defs/Distribution"
+            },
+            "knowledge_level": { "enum": ["unknown", "vendor_attested", "observed", "verified"] },
+            "evidence": {
+              "type": "object",
+              "required": ["trials", "successes"],
+              "additionalProperties": false,
+              "properties": {
+                "trials": { "type": "integer", "minimum": 0 },
+                "successes": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "variance_limit": { "type": "number", "exclusiveMinimum": 0, "description": "Above this reliability variance, evaluations that include the Vortex are Turbulent." }
+          }
+        },
+        "consequence": { "$ref": "#/$defs/ImpactModel" },
+        "propagation": { "$ref": "#/$defs/Propagation" },
+        "refinement": {
+          "type": "object",
+          "required": ["subassembly_ref"],
+          "additionalProperties": false,
+          "description": "Reference to the Subassembly that will replace this Vortex once its internals are modeled.",
+          "properties": { "subassembly_ref": { "$ref": "#/$defs/Identifier" } }
+        }
+      }
+    },
+
+    "Structure": {
+      "description": "Success logic over nodes. A leaf names a node; an operator combines inputs. all: every input must succeed (series). any: at least one (1-of-N). k_of_n: at least k succeed. failover: inputs are [primary, standby]; fails if primary fails and (failover does not succeed or standby fails).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["node"],
+          "additionalProperties": false,
+          "properties": { "node": { "$ref": "#/$defs/Identifier" } }
+        },
+        {
+          "type": "object",
+          "required": ["operator", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "operator": { "enum": ["all", "any", "k_of_n", "failover"] },
+            "k": { "type": "integer", "minimum": 1 },
+            "failover_success": { "$ref": "#/$defs/Probability" },
+            "common_cause": {
+              "type": "object",
+              "required": ["beta_factor"],
+              "additionalProperties": false,
+              "properties": { "beta_factor": { "$ref": "#/$defs/Probability" } },
+              "description": "Beta-factor common-cause model applied to the members of this operator."
+            },
+            "inputs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Structure" } }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "operator": { "const": "k_of_n" } }, "required": ["operator"] },
+              "then": { "required": ["k"] }
+            },
+            {
+              "if": { "properties": { "operator": { "const": "failover" } }, "required": ["operator"] },
+              "then": { "required": ["failover_success"], "properties": { "inputs": { "minItems": 2, "maxItems": 2 } } }
+            }
+          ]
+        }
+      ]
+    },
+
+    "TopEvent": {
+      "description": "The system-level outcome: success logic and the consequence of its failure.",
+      "type": "object",
+      "required": ["name", "structure", "consequence"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "structure": { "$ref": "#/$defs/Structure" },
+        "consequence": { "$ref": "#/$defs/ImpactModel" }
+      }
+    },
+
+    "EvaluationResult": {
+      "description": "Engine output. Validate against #/$defs/EvaluationResult.",
+      "type": "object",
+      "required": ["system_id", "evaluated_at", "flow_state", "risk", "drift"],
+      "additionalProperties": false,
+      "properties": {
+        "system_id": { "$ref": "#/$defs/Identifier" },
+        "evaluated_at": { "type": "string", "format": "date-time" },
+        "horizon_sec": { "type": "number", "exclusiveMinimum": 0 },
+        "impact_unit": { "type": "string" },
+        "flow_state": { "enum": ["Laminar", "Turbulent"] },
+        "turbulence_causes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["cause"],
+            "additionalProperties": false,
+            "properties": {
+              "cause": { "enum": ["EntropyExceeded", "ConfidenceBelowMinimum", "VortexVarianceExceeded", "UnconfirmedAdaptation"] },
+              "node_id": { "$ref": "#/$defs/Identifier" }
+            }
+          }
+        },
+        "risk": {
+          "type": "object",
+          "required": ["expected_value"],
+          "additionalProperties": false,
+          "properties": {
+            "expected_value": { "type": "number" },
+            "quantiles": {
+              "type": "object",
+              "patternProperties": { "^(0(\\.[0-9]+)?|1)$": { "type": "number" } },
+              "additionalProperties": false
+            },
+            "tail": {
+              "type": "object",
+              "required": ["measure", "level", "value"],
+              "additionalProperties": false,
+              "properties": {
+                "measure": { "enum": ["cvar"] },
+                "level": { "type": "number" },
+                "value": { "type": "number" }
+              }
+            },
+            "epistemic_variance_share": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["node_id", "availability_mean"],
+            "additionalProperties": false,
+            "properties": {
+              "node_id": { "$ref": "#/$defs/Identifier" },
+              "availability_mean": { "$ref": "#/$defs/Probability" },
+              "availability_std_dev": { "type": "number", "minimum": 0 },
+              "attribution_entropy": { "type": "number", "minimum": 0, "maximum": 1 },
+              "flow_state": { "enum": ["Laminar", "Turbulent"] }
+            }
+          }
+        },
+        "drift": {
+          "type": "object",
+          "required": ["variance", "confidence"],
+          "additionalProperties": false,
+          "properties": {
+            "variance": { "type": "number", "minimum": 0 },
+            "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+            "last_recalibration_at": { "type": ["string", "null"], "format": "date-time" },
+            "missed_ticks": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}

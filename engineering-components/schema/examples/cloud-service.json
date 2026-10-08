@@ -1,0 +1,357 @@
+{
+  "schema_version": "0.1.0",
+  "system_id": "cloud-service-example",
+  "name": "Three-tier cloud service",
+  "description": "Illustrative SRE model; see examples/cloud-service-uptime.md.",
+  "impact_unit": {
+    "id": "USD",
+    "description": "US dollars"
+  },
+  "evaluation": {
+    "horizon_sec": 2592000,
+    "sampling_interval_sec": 10,
+    "recalibration": {
+      "schedule": "*/15 * * * *",
+      "base_quantization_tier": "MatrixMesh",
+      "drift_model": {
+        "base_drift_variance": 0.0001,
+        "growth_time_constant_sec": 60
+      },
+      "accuracy": {
+        "error_tolerance": 0.05,
+        "minimum_confidence": 0.85,
+        "remediation": "ForceDirectIntegration"
+      },
+      "missed_tick_policy": "accumulate"
+    },
+    "risk_measures": {
+      "quantiles": [
+        0.5,
+        0.95,
+        0.99
+      ]
+    },
+    "random_seed": 42
+  },
+  "nodes": [
+    {
+      "kind": "vortex",
+      "node_id": "cdn",
+      "name": "CDN edge (unknown provider)",
+      "vortex_class": "opaque_system",
+      "io_contract": {
+        "inputs": [
+          {
+            "name": "request",
+            "type": "http_request"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "response",
+            "type": "http_response"
+          }
+        ],
+        "advertised": {
+          "availability": 0.9999,
+          "notes": "Provider claim, unverified"
+        }
+      },
+      "uncertainty": {
+        "reliability": {
+          "family": "Beta",
+          "parameters": {
+            "alpha": 9,
+            "beta": 1
+          }
+        },
+        "knowledge_level": "unknown"
+      },
+      "consequence": {
+        "amount": {
+          "family": "Point",
+          "parameters": {
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "kind": "subassembly",
+      "node_id": "az1",
+      "name": "Availability zone 1",
+      "category": "ComputeNode",
+      "elements": [
+        {
+          "element_id": "capacity",
+          "element_type": "capacitance",
+          "coefficient": 1.0,
+          "capacity_limit": 1.0,
+          "damping_leak_coefficient": 0.0
+        }
+      ],
+      "failure_modes": [
+        {
+          "mode_id": "az1-lambda",
+          "name": "Lambda agent runner failure",
+          "mechanism": "CapacitiveAccumulation",
+          "element_ref": "capacity",
+          "rupture_threshold": 1.0,
+          "baseline_hazard": {
+            "rate_per_sec": 1.9294947595765543e-10
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 0
+              }
+            }
+          }
+        },
+        {
+          "mode_id": "az1-ec2",
+          "name": "EC2 worker failure",
+          "mechanism": "CapacitiveAccumulation",
+          "element_ref": "capacity",
+          "rupture_threshold": 1.0,
+          "baseline_hazard": {
+            "rate_per_sec": 3.8599549906772157e-10
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "subassembly",
+      "node_id": "az2",
+      "name": "Availability zone 2",
+      "category": "ComputeNode",
+      "elements": [
+        {
+          "element_id": "capacity",
+          "element_type": "capacitance",
+          "coefficient": 1.0,
+          "capacity_limit": 1.0,
+          "damping_leak_coefficient": 0.0
+        }
+      ],
+      "failure_modes": [
+        {
+          "mode_id": "az2-lambda",
+          "name": "Lambda agent runner failure",
+          "mechanism": "CapacitiveAccumulation",
+          "element_ref": "capacity",
+          "rupture_threshold": 1.0,
+          "baseline_hazard": {
+            "rate_per_sec": 1.9294947595765543e-10
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 0
+              }
+            }
+          }
+        },
+        {
+          "mode_id": "az2-ec2",
+          "name": "EC2 worker failure",
+          "mechanism": "CapacitiveAccumulation",
+          "element_ref": "capacity",
+          "rupture_threshold": 1.0,
+          "baseline_hazard": {
+            "rate_per_sec": 3.8599549906772157e-10
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "subassembly",
+      "node_id": "az3",
+      "name": "Availability zone 3",
+      "category": "ComputeNode",
+      "elements": [
+        {
+          "element_id": "capacity",
+          "element_type": "capacitance",
+          "coefficient": 1.0,
+          "capacity_limit": 1.0,
+          "damping_leak_coefficient": 0.0
+        }
+      ],
+      "failure_modes": [
+        {
+          "mode_id": "az3-lambda",
+          "name": "Lambda agent runner failure",
+          "mechanism": "CapacitiveAccumulation",
+          "element_ref": "capacity",
+          "rupture_threshold": 1.0,
+          "baseline_hazard": {
+            "rate_per_sec": 1.9294947595765543e-10
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 0
+              }
+            }
+          }
+        },
+        {
+          "mode_id": "az3-ec2",
+          "name": "EC2 worker failure",
+          "mechanism": "CapacitiveAccumulation",
+          "element_ref": "capacity",
+          "rupture_threshold": 1.0,
+          "baseline_hazard": {
+            "rate_per_sec": 3.8599549906772157e-10
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "subassembly",
+      "node_id": "db-primary",
+      "name": "Database primary",
+      "category": "DatabaseNode",
+      "elements": [
+        {
+          "element_id": "capacity",
+          "element_type": "capacitance",
+          "coefficient": 1.0,
+          "capacity_limit": 1.0,
+          "damping_leak_coefficient": 0.0
+        }
+      ],
+      "failure_modes": [
+        {
+          "mode_id": "db-primary-down",
+          "name": "Primary unavailable",
+          "mechanism": "CapacitiveAccumulation",
+          "element_ref": "capacity",
+          "rupture_threshold": 1.0,
+          "baseline_hazard": {
+            "rate_per_sec": 3.8599549906772157e-10
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "subassembly",
+      "node_id": "db-standby",
+      "name": "Database standby",
+      "category": "DatabaseNode",
+      "elements": [
+        {
+          "element_id": "capacity",
+          "element_type": "capacitance",
+          "coefficient": 1.0,
+          "capacity_limit": 1.0,
+          "damping_leak_coefficient": 0.0
+        }
+      ],
+      "failure_modes": [
+        {
+          "mode_id": "db-standby-down",
+          "name": "Standby unavailable",
+          "mechanism": "CapacitiveAccumulation",
+          "element_ref": "capacity",
+          "rupture_threshold": 1.0,
+          "baseline_hazard": {
+            "rate_per_sec": 3.8599549906772157e-10
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "top_event": {
+    "name": "Service unavailable",
+    "structure": {
+      "operator": "all",
+      "inputs": [
+        {
+          "node": "cdn"
+        },
+        {
+          "operator": "k_of_n",
+          "k": 2,
+          "inputs": [
+            {
+              "node": "az1"
+            },
+            {
+              "node": "az2"
+            },
+            {
+              "node": "az3"
+            }
+          ]
+        },
+        {
+          "operator": "failover",
+          "failover_success": 0.95,
+          "inputs": [
+            {
+              "node": "db-primary"
+            },
+            {
+              "node": "db-standby"
+            }
+          ]
+        }
+      ]
+    },
+    "consequence": {
+      "amount": {
+        "family": "Point",
+        "parameters": {
+          "value": 10000
+        }
+      },
+      "basis": "per_unit_time",
+      "time_unit": "hour"
+    }
+  }
+}

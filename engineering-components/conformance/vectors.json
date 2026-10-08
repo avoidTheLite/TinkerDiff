@@ -1,0 +1,416 @@
+{
+  "description": "Language-neutral conformance vectors. An engine passes a vector when every number in 'expected' is reproduced from 'input' within 'tolerance' (absolute or relative as stated). 'spec' names the section that defines the computation.",
+  "vectors_version": "0.1.0",
+  "vectors": [
+    {
+      "id": "element.capacitance.euler",
+      "spec": "01-foundations section 6",
+      "description": "Two explicit-Euler steps of e' = f/C - gamma*e",
+      "input": {
+        "C": 4,
+        "gamma": 0.1,
+        "f": 2,
+        "e0": 0,
+        "dt": 0.5,
+        "steps": 2
+      },
+      "expected": {
+        "e": [
+          0.25,
+          0.4875
+        ]
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "element.inductance.euler",
+      "spec": "01-foundations section 6",
+      "description": "One explicit-Euler step of f' = e/I - gamma*f",
+      "input": {
+        "I": 2,
+        "gamma": 0.1,
+        "e": 3,
+        "f0": 1,
+        "dt": 0.5,
+        "steps": 1
+      },
+      "expected": {
+        "f": [
+          1.7
+        ]
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "beta.moments",
+      "spec": "02-risk-model section 3.2",
+      "description": "Mean and variance of a Beta distribution",
+      "input": {
+        "alpha": 9,
+        "beta": 1
+      },
+      "expected": {
+        "mean": 0.9,
+        "variance": 0.008181818181818182
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "beta.update",
+      "spec": "02-risk-model section 3.2",
+      "description": "Conjugate update with k successes in n windows",
+      "input": {
+        "alpha": 9,
+        "beta": 1,
+        "k": 95,
+        "n": 100
+      },
+      "expected": {
+        "alpha": 104,
+        "beta": 6
+      },
+      "tolerance": {
+        "absolute": 0
+      }
+    },
+    {
+      "id": "beta.quantile.alpha-1",
+      "spec": "04-vortex section 3.2",
+      "description": "5th percentile of Beta(alpha,1): CDF is x^alpha, quantile p^(1/alpha)",
+      "input": {
+        "alpha": 9,
+        "beta": 1,
+        "p": 0.05
+      },
+      "expected": {
+        "quantile": 0.7168711644368865
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "fragility.weibull",
+      "spec": "03-failure-modes section 3",
+      "description": "F(P)=1-exp(-(P/scale)^shape)",
+      "input": {
+        "P": 0.5,
+        "scale": 0.95,
+        "shape": 3.2
+      },
+      "expected": {
+        "F": 0.12034866119934073
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "competing-risk.constant-hazard",
+      "spec": "03-failure-modes sections 4-5",
+      "description": "Survival, attribution shares, normalized attribution entropy",
+      "input": {
+        "hazard_rates_per_sec": [
+          0.0001,
+          0.0002
+        ],
+        "t_sec": 1000
+      },
+      "expected": {
+        "F": [
+          0.09516258196404048,
+          0.18126924692201818
+        ],
+        "survival": 0.7408182206817178,
+        "attribution_share": [
+          0.3333333333333333,
+          0.6666666666666666
+        ],
+        "attribution_entropy": 0.9182958340544894
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "combination.k-of-n",
+      "spec": "02-risk-model section 4",
+      "description": "2-of-3 with identical independent members",
+      "input": {
+        "a": 0.9985005,
+        "k": 2,
+        "N": 3
+      },
+      "expected": {
+        "availability": 0.9999932612425022
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "combination.failover",
+      "spec": "examples/cloud-service-uptime section 2.3",
+      "description": "Failover availability",
+      "input": {
+        "A_primary": 0.999,
+        "A_standby": 0.999,
+        "P_failover": 0.95
+      },
+      "expected": {
+        "availability": 0.99994905
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "combination.k-of-n.common-cause",
+      "spec": "02-risk-model section 4.1",
+      "description": "2-of-3 with beta-factor common cause",
+      "input": {
+        "lambda_per_sec": 2e-09,
+        "beta_ccf": 0.1,
+        "horizon_sec": 2592000,
+        "k": 2,
+        "N": 3
+      },
+      "expected": {
+        "availability": 0.9994169700147363
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "mesh.propagation.linear",
+      "spec": "05-execution-model section 3.3",
+      "description": "S = min(1, W F)",
+      "input": {
+        "W": [
+          [
+            0.85,
+            0.15
+          ],
+          [
+            0.3,
+            0.7
+          ]
+        ],
+        "F": [
+          0.2,
+          0.1
+        ],
+        "mode": "linear"
+      },
+      "expected": {
+        "S": [
+          0.185,
+          0.13
+        ]
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "mesh.propagation.noisy-or",
+      "spec": "05-execution-model section 3.3",
+      "description": "S_j = 1 - prod(1 - w_ji F_i)",
+      "input": {
+        "W": [
+          [
+            0.85,
+            0.15
+          ],
+          [
+            0.3,
+            0.7
+          ]
+        ],
+        "F": [
+          0.2,
+          0.1
+        ],
+        "mode": "noisy_or"
+      },
+      "expected": {
+        "S": [
+          0.18245,
+          0.12580000000000002
+        ]
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "vortex.adaptation.validation",
+      "spec": "04-vortex section 5",
+      "description": "Limit each delta to +/-max_weight_delta, then clip to [0,1]",
+      "input": {
+        "W_static": [
+          [
+            0.85,
+            0.15
+          ]
+        ],
+        "Phi": [
+          [
+            0.3,
+            -0.4
+          ]
+        ],
+        "max_weight_delta": 0.2
+      },
+      "expected": {
+        "W_adapted": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "drift.variance-and-confidence",
+      "spec": "06-drift-control section 4",
+      "description": "Accumulated variance and accuracy confidence after n updates",
+      "input": {
+        "d0": 0.0001,
+        "tau_sec": 60,
+        "delta_sec": 10,
+        "n_updates": 5,
+        "error_tolerance": 0.05
+      },
+      "expected": {
+        "increment": 0.00011813604128656459,
+        "V_drift": 0.000590680206432823,
+        "confidence": 0.9603408781350959
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "drift.interval-bound",
+      "spec": "06-drift-control section 5.1",
+      "description": "Maximum drift variance, updates, and interval for a minimum confidence",
+      "input": {
+        "d0": 0.0001,
+        "tau_sec": 60,
+        "delta_sec": 10,
+        "error_tolerance": 0.05,
+        "minimum_confidence": 0.85
+      },
+      "expected": {
+        "V_max": 0.0012064176462883128,
+        "n_max": 10,
+        "max_interval_sec": 100
+      },
+      "tolerance": {
+        "absolute": 1e-09
+      }
+    },
+    {
+      "id": "probability-flow.gaussian",
+      "spec": "05-execution-model section 4.2",
+      "description": "Time-domain solution for a point mass at xi=0",
+      "input": {
+        "A": 0.5,
+        "B": 0.02,
+        "R": 0.01,
+        "xi": 0,
+        "t": 10,
+        "x": [
+          5.0,
+          5.5
+        ]
+      },
+      "expected": {
+        "P": [
+          0.5707561791468201,
+          0.41757414098168294
+        ]
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
+    },
+    {
+      "id": "probability-flow.laplace-green",
+      "spec": "05-execution-model section 4.2",
+      "description": "Green's function in the Laplace domain; must equal the Laplace transform of the Gaussian solution",
+      "input": {
+        "A": 0.5,
+        "B": 0.02,
+        "R": 0.01,
+        "xi": 0,
+        "s": 0.1,
+        "x": [
+          0.0,
+          1.0
+        ]
+      },
+      "expected": {
+        "g": [
+          1.9657028349268788,
+          1.5805178021050879
+        ]
+      },
+      "tolerance": {
+        "absolute": 1e-09
+      }
+    },
+    {
+      "id": "model.cloud-service.expected-loss",
+      "spec": "examples/cloud-service-uptime section 4",
+      "description": "Expected 30-day loss for schema/examples/cloud-service.json (CDN prior Beta(9,1)); quantile is of the expected loss given the epistemic draw",
+      "input": {
+        "model": "schema/examples/cloud-service.json"
+      },
+      "expected": {
+        "service_availability_mean": 0.8999480804272577,
+        "expected_loss_usd": 720373.8209237445,
+        "loss_q95_given_epistemic_usd": 2038825.3732109684
+      },
+      "tolerance": {
+        "relative": 1e-09
+      }
+    },
+    {
+      "id": "model.cloud-service.expected-loss.verified-cdn",
+      "spec": "examples/cloud-service-uptime section 4",
+      "description": "Same model with the CDN prior replaced by Beta(9999,1)",
+      "input": {
+        "model": "schema/examples/cloud-service.json",
+        "override": {
+          "cdn.reliability": {
+            "family": "Beta",
+            "parameters": {
+              "alpha": 9999,
+              "beta": 1
+            }
+          }
+        }
+      },
+      "expected": {
+        "service_availability_mean": 0.9998423173546833,
+        "expected_loss_usd": 1135.3150462801054,
+        "loss_q95_given_epistemic_usd": 2572.0519984927746
+      },
+      "tolerance": {
+        "relative": 1e-09
+      }
+    }
+  ]
+}
