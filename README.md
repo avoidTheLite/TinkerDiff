@@ -29,7 +29,7 @@ These terms are canonical across all documents and the schema.
 
 ## Risk Model in Brief
 
-For each scenario \(S_i\), risk combines a likelihood \(p_i\) and an impact \(x_i\). Both are treated as random variables because their parameters are uncertain. The result is a distribution of risk with an expected value, reported in a unit chosen by the modeling team (dollars by default; any quantifiable outcome is supported). Black-box components contribute wide distributions, so missing knowledge raises tail risk by construction.
+For each scenario $S_i$, risk combines a likelihood $p_i$ and an impact $x_i$. Both are treated as random variables because their parameters are uncertain. The result is a distribution of risk with an expected value, reported in a unit chosen by the modeling team (dollars by default; any quantifiable outcome is supported). Black-box components contribute wide distributions, so missing knowledge raises tail risk by construction.
 
 ## Repository Layout
 

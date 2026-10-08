@@ -91,8 +91,8 @@ Validation has two stages. The first is JSON Schema validation, which an engine 
 | Element references | `FailureMode.element_ref` must name an Element in the same Subassembly; `Endpoint.element_id` must name an Element in the referenced node |
 | Propagation shape | `weights` has `len(targets)` rows and `len(inputs)` columns; each `inputs` entry is a `mode_id` of the same node |
 | Escalation target | `vortex_ref` must name a Vortex of class `inference` |
-| Structure | `k_of_n` has \(1 \le k \le N\); `failover` has exactly two inputs; a node appears in the structure at most once unless a shared-cause model is declared |
-| Distributions | Parameters must give a valid distribution (for example `Uniform.min < Uniform.max`); distributions used as probabilities must be supported on \([0,1]\) |
+| Structure | `k_of_n` has $1 \le k \le N$; `failover` has exactly two inputs; a node appears in the structure at most once unless a shared-cause model is declared |
+| Distributions | Parameters must give a valid distribution (for example `Uniform.min < Uniform.max`); distributions used as probabilities must be supported on $[0,1]$ |
 | Acyclic propagation | The propagation graph must be acyclic. Cyclic feedback is not supported in schema version 0.1.0 and must be rejected |
 | Single unit | All consequences are in `impact_unit`; the schema cannot check this, so the modeler is responsible |
 

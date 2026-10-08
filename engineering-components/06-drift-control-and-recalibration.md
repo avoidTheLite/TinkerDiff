@@ -47,15 +47,15 @@ Benefits:
 
 ### 3.2 Merging a Result Without Losing Updates
 
-The recalibration pass computes the true state **as of its tick time** \(t_a\) from a snapshot of raw telemetry. It finishes at some later time \(t_b\). During \([t_a, t_b]\) the incremental loop has kept advancing the live state. Replacing the live state with the pass result would silently discard that progress.
+The recalibration pass computes the true state **as of its tick time** $t_a$ from a snapshot of raw telemetry. It finishes at some later time $t_b$. During $[t_a, t_b]$ the incremental loop has kept advancing the live state. Replacing the live state with the pass result would silently discard that progress.
 
 The merge therefore must:
 
-1. Take the pass result (state as of \(t_a\)).
-2. Re-apply the incremental updates for log events in \((t_a, t_b]\) to it.
+1. Take the pass result (state as of $t_a$).
+2. Re-apply the incremental updates for log events in $(t_a, t_b]$ to it.
 3. Publish the resulting state, with a drift variance equal to the increments of the replayed updates only (§4.1), not zero.
 
-When no events arrived in \((t_a, t_b]\), the post-merge drift variance is zero.
+When no events arrived in $(t_a, t_b]$, the post-merge drift variance is zero.
 
 A conforming way to avoid races is a single-writer rule: only the incremental loop publishes state, and the recalibration pass hands its result over to it. Any approach is acceptable if no update is lost.
 
@@ -69,38 +69,38 @@ Model accuracy is treated as an uncertainty in the same framework as everything 
 
 ### 4.1 Accumulated Error Variance
 
-Each incremental update over an interval \(\delta\) adds approximation-error variance
+Each incremental update over an interval $\delta$ adds approximation-error variance
 
-\[
+$$
 v(\delta) = d_0\,\exp\left(\frac{\delta}{\tau}\right)
-\]
+$$
 
-where \(d_0\) is the base drift variance and \(\tau\) the growth time constant (`growth_time_constant_sec`; a typical value is 60 s). Widening the sampling interval raises the cost of each update exponentially. Assuming the errors of successive updates are independent, variances add, so after \(n\) updates since the last recalibration
+where $d_0$ is the base drift variance and $\tau$ the growth time constant (`growth_time_constant_sec`; a typical value is 60 s). Widening the sampling interval raises the cost of each update exponentially. Assuming the errors of successive updates are independent, variances add, so after $n$ updates since the last recalibration
 
-\[
+$$
 V_{\text{drift}} = \sum_{k=1}^{n} v(\delta_k)
-\]
+$$
 
-Recalibration resets \(V_{\text{drift}}\) to the replayed increments of §3.2. If the errors are positively correlated (a systematic bias), \(V_{\text{drift}}\) grows faster than the sum, and the sum underestimates it. Models with a known bias should set \(d_0\) conservatively.
+Recalibration resets $V_{\text{drift}}$ to the replayed increments of §3.2. If the errors are positively correlated (a systematic bias), $V_{\text{drift}}$ grows faster than the sum, and the sum underestimates it. Models with a known bias should set $d_0$ conservatively.
 
 ### 4.2 Accuracy Confidence
 
-Treating the approximation error \(e\) as zero-mean Gaussian with variance \(V_{\text{drift}}\), the confidence that it lies within a tolerance \(\varepsilon\) (`error_tolerance`, in the units of the state being approximated) is
+Treating the approximation error $e$ as zero-mean Gaussian with variance $V_{\text{drift}}$, the confidence that it lies within a tolerance $\varepsilon$ (`error_tolerance`, in the units of the state being approximated) is
 
-\[
+$$
 c = P\big(|e| \le \varepsilon\big) = \operatorname{erf}\left(\frac{\varepsilon}{\sqrt{2\,V_{\text{drift}}}}\right)
-\]
+$$
 
-with \(c = 1\) when \(V_{\text{drift}} = 0\). The tolerance and the minimum allowed confidence \(c_{\min}\) (`minimum_confidence`) are model parameters.
+with $c = 1$ when $V_{\text{drift}} = 0$. The tolerance and the minimum allowed confidence $c_{\min}$ (`minimum_confidence`) are model parameters.
 
 ### 4.3 Circuit Breaker and Missed Ticks
 
-If \(c < c_{\min}\), the engine abandons the simplified path and applies the configured `remediation`:
+If $c < c_{\min}$, the engine abandons the simplified path and applies the configured `remediation`:
 
 - `ForceDirectIntegration`: run the direct calculus path now, for the affected nodes.
 - `EscalateToVortex`: hand the affected state to an inference-class Vortex ([04](04-vortex-black-box-components.md)).
 
-A missed or late recalibration tick needs no special handling: no reset occurs, so \(V_{\text{drift}}\) keeps growing, \(c\) falls, and the breaker fires if it must. Evaluations made while \(c < c_{\min}\) are flagged Turbulent ([04](04-vortex-black-box-components.md) §6). Because confidence is a first-class quantity, drift is never invisible.
+A missed or late recalibration tick needs no special handling: no reset occurs, so $V_{\text{drift}}$ keeps growing, $c$ falls, and the breaker fires if it must. Evaluations made while $c < c_{\min}$ are flagged Turbulent ([04](04-vortex-black-box-components.md) §6). Because confidence is a first-class quantity, drift is never invisible.
 
 ## 5. Schedule
 
@@ -117,15 +117,15 @@ The recalibration interval is specified as a **cron expression** (`schedule` in 
 
 The interval has an upper and a lower bound.
 
-**Upper bound (accuracy).** The confidence must remain at or above \(c_{\min}\) until the next tick. From §4.2 this requires
+**Upper bound (accuracy).** The confidence must remain at or above $c_{\min}$ until the next tick. From §4.2 this requires
 
-\[
+$$
 V_{\text{drift}} \le V_{\max} = \frac{\varepsilon^2}{2\,\left[\operatorname{erf}^{-1}(c_{\min})\right]^2}
-\]
+$$
 
-so the number of incremental updates between ticks is at most \(n_{\max} = \lfloor V_{\max} / v(\delta) \rfloor\), and the schedule interval should not exceed about \(n_{\max}\,\delta\).
+so the number of incremental updates between ticks is at most $n_{\max} = \lfloor V_{\max} / v(\delta) \rfloor$, and the schedule interval should not exceed about $n_{\max}\,\delta$.
 
-*Example:* \(d_0 = 10^{-4}\), \(\tau = 60\) s, \(\delta = 10\) s, \(\varepsilon = 0.05\), \(c_{\min} = 0.85\). Then \(\operatorname{erf}^{-1}(0.85) = 1.0179\), \(V_{\max} = 1.206\times 10^{-3}\), \(v(\delta) = 1.181\times 10^{-4}\), \(n_{\max} = 10\), so the interval should not exceed about 100 s.
+*Example:* $d_0 = 10^{-4}$, $\tau = 60$ s, $\delta = 10$ s, $\varepsilon = 0.05$, $c_{\min} = 0.85$. Then $\operatorname{erf}^{-1}(0.85) = 1.0179$, $V_{\max} = 1.206\times 10^{-3}$, $v(\delta) = 1.181\times 10^{-4}$, $n_{\max} = 10$, so the interval should not exceed about 100 s.
 
 **Lower bound (compute).** A recalibration pass must complete before the next tick, otherwise ticks are missed (§4.3). The interval must exceed the pass's duration, with margin, for the telemetry volume since the last anchor.
 
@@ -133,7 +133,7 @@ The schedule is chosen between those bounds. A longer interval saves compute and
 
 ## 6. What Recalibration Does and Does Not Guarantee
 
-Recalibration guarantees that the approximation error accumulated by the incremental path before the tick time \(t_a\) is removed, provided the pass completes. Combined with an on-time schedule satisfying §5.1, \(V_{\text{drift}}\) stays below \(V_{\max}\) between ticks, within the independence assumption of §4.1.
+Recalibration guarantees that the approximation error accumulated by the incremental path before the tick time $t_a$ is removed, provided the pass completes. Combined with an on-time schedule satisfying §5.1, $V_{\text{drift}}$ stays below $V_{\max}$ between ticks, within the independence assumption of §4.1.
 
 It does not:
 
@@ -151,6 +151,6 @@ Drift control is configured in a single `recalibration` object, used at the syst
 |-------|---------|
 | `schedule` | Cron expression for the recalibration tick (§5) |
 | `base_quantization_tier` | Highest deterministic tier used between ticks ([05](05-execution-model.md) §2) |
-| `drift_model` | \(d_0\) (`base_drift_variance`) and \(\tau\) (`growth_time_constant_sec`) of §4.1 |
-| `accuracy` | `error_tolerance` \(\varepsilon\), `minimum_confidence` \(c_{\min}\), and `remediation` (§4.3) |
+| `drift_model` | $d_0$ (`base_drift_variance`) and $\tau$ (`growth_time_constant_sec`) of §4.1 |
+| `accuracy` | `error_tolerance` $\varepsilon$, `minimum_confidence` $c_{\min}$, and `remediation` (§4.3) |
 | `missed_tick_policy` | `accumulate` (default; §4.3) or `run_late` (start the pass as soon as possible after a miss) |

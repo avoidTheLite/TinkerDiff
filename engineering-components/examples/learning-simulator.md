@@ -19,38 +19,38 @@ A usable model must provide:
 
 ## 2. State-Space Reinforcement Matrix
 
-The state of all habits and skills is a vector \(\vec{S}_t\), advanced by a transition matrix \(A\) (structural pathways between behaviors) and an input matrix \(B\) applied to the currently active behaviors \(\vec{u}_t\):
+The state of all habits and skills is a vector $\vec{S}_t$, advanced by a transition matrix $A$ (structural pathways between behaviors) and an input matrix $B$ applied to the currently active behaviors $\vec{u}_t$:
 
-\[
+$$
 \vec{S}_{t+1} = A\vec{S}_t + B\vec{u}_t
-\]
+$$
 
 Each node is a damped second-order system, so that state changes are bounded and gradual rather than instantaneous resets or unbounded spikes:
 
-\[
+$$
 m\frac{d^2x}{dt^2} + b\frac{dx}{dt} + kx = F(t)
-\]
+$$
 
-with natural frequency \(\omega_n = \sqrt{k/m}\) and damping ratio \(\zeta = b / (2\sqrt{km})\).
+with natural frequency $\omega_n = \sqrt{k/m}$ and damping ratio $\zeta = b / (2\sqrt{km})$.
 
-For a sinusoidal drive \(F(t) = F_0 \sin(\omega t)\), the steady-state amplitude is
+For a sinusoidal drive $F(t) = F_0 \sin(\omega t)$, the steady-state amplitude is
 
-\[
+$$
 |X(\omega)| = \frac{F_0}{\sqrt{(k - m\omega^2)^2 + (b\omega)^2}}
-\]
+$$
 
-which peaks near \(\omega = \omega_n\), where \(|X| \approx F_0 / (b\,\omega_n)\) for light damping.
+which peaks near $\omega = \omega_n$, where $|X| \approx F_0 / (b\,\omega_n)$ for light damping.
 
 Interpretation:
 
 - **Isolated or off-resonance input.** Damping absorbs the drive; amplitude stays small and the behavior does not persist.
-- **Input repeating near \(\omega_n\)** (practice at the cadence the pathway responds to). The node resonates and amplitude grows, which is the condition under which the model commits a permanent pathway.
+- **Input repeating near $\omega_n$** (practice at the cadence the pathway responds to). The node resonates and amplitude grows, which is the condition under which the model commits a permanent pathway.
 
-Here "frequency" means how often the behavior is repeated. High-frequency repetition is not sufficient by itself: above \(\omega_n\) the response amplitude falls off as \(1/\omega^2\). The model therefore requires repetition cadence to be matched against each pathway's \(\omega_n\), which is a parameter of the node.
+Here "frequency" means how often the behavior is repeated. High-frequency repetition is not sufficient by itself: above $\omega_n$ the response amplitude falls off as $1/\omega^2$. The model therefore requires repetition cadence to be matched against each pathway's $\omega_n$, which is a parameter of the node.
 
 ### 2.1 Cross-Domain Skill Transfer
 
-A learner rarely starts with an empty matrix. Existing low-damping, high-gain sub-routines (spatial awareness, pattern recognition) already exist as resonant branches, so a new task's input vector \(\vec{u}\) couples into established structure through the off-diagonal terms of \(A\), shortening the build-up phase.
+A learner rarely starts with an empty matrix. Existing low-damping, high-gain sub-routines (spatial awareness, pattern recognition) already exist as resonant branches, so a new task's input vector $\vec{u}$ couples into established structure through the off-diagonal terms of $A$, shortening the build-up phase.
 
 ## 3. Hydraulic Element Mapping
 
@@ -58,12 +58,12 @@ The reinforcement matrix is realized as a manifold of compressible fluid (neural
 
 | Hydraulic part | Element type | Behavioral role |
 |----------------|--------------|-----------------|
-| Variable-displacement pump | Source (boundary input \(\vec{u}\)) | Forces volume into the network; displacement scales with task intensity and frequency |
+| Variable-displacement pump | Source (boundary input $\vec{u}$) | Forces volume into the network; displacement scales with task intensity and frequency |
 | Gas-charged accumulator | Capacitance (C) | Short-term staging area; absorbs high-pressure spikes and stores elastic energy |
 | Flow control valve | Resistance (R), variable | Gating/attention; opening area grows with activity frequency |
 | Fluid reservoir | Capacitance (C), large reference volume | Baseline pool of unallocated resources |
 | Check valve | Resistance (R), one-way | Habit lock; prevents backflow once a threshold is crossed |
-| Calibrated leak | Leak term \(\gamma\) on a Capacitance | Forgetting curve; drains unreinforced volume back to the reservoir |
+| Calibrated leak | Leak term $\gamma$ on a Capacitance | Forgetting curve; drains unreinforced volume back to the reservoir |
 
 ```
 [ Active Behavior (Pump) ] ---> high pressure / compression
@@ -79,13 +79,13 @@ The reinforcement matrix is realized as a manifold of compressible fluid (neural
 
 ### 3.1 Compressibility and the Struggle Phase
 
-A new activity has a narrow pathway: fluid compresses and local pressure builds. The bulk modulus \(K\) measures resistance to compression:
+A new activity has a narrow pathway: fluid compresses and local pressure builds. The bulk modulus $K$ measures resistance to compression:
 
-\[
+$$
 K = -V\frac{\Delta P}{\Delta V}
-\]
+$$
 
-High \(\Delta P\) with low \(\Delta V\) corresponds to effortful practice with little volume reaching the downstream chamber. Accumulated pressure is the score modifier; crossing a pressure threshold triggers channel expansion.
+High $\Delta P$ with low $\Delta V$ corresponds to effortful practice with little volume reaching the downstream chamber. Accumulated pressure is the score modifier; crossing a pressure threshold triggers channel expansion.
 
 ### 3.2 Frequency Response of the Valve
 
