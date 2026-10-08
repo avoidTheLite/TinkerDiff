@@ -12,7 +12,7 @@ A component in this framework has:
 - an internal behavior given by a **base formula** and **scaling parameters**,
 - membership in a group of components that share the same mathematical base.
 
-Composition proceeds in three levels: **Elements** (base formulas) combine into **Subassemblies** (real components), which combine into **systems**. Components whose internals are unknown are **Vortices** ([04](04-vortex-black-box-components.md)).
+Composition proceeds in four levels: **Elements** (base formulas) combine into **Subassemblies** (real components), which are grouped with **Vortices** into **Assemblies**, which make up the **System**. Components whose internals are unknown are **Vortices** ([04](04-vortex-black-box-components.md)).
 
 ### 1.1 Why Closed-Form Evaluation Is Possible
 
@@ -85,8 +85,10 @@ Real storage Elements dissipate and are bounded. Each Element may carry:
 |-------|------------|------|
 | **Element** | One base relation with its parameters and initial state | Dynamics |
 | **Subassembly** | Interconnected Elements representing one real component | Internal topology, failure modes, downstream impact weights, escalation boundary |
-| **Fitting** | Adapter between two interfaces (Element or Subassembly) | Unit, domain, or shape conversion; a Fitting with a ratio is a transformer relation applied at an interface |
-| **System** | Subassemblies and Vortices wired by Fittings | Redundancy groups, evaluation policy, impact unit, recalibration schedule |
+| **Vortex** | Black-box component standing in for a Subassembly or a whole system | I/O contract, mandatory uncertainty distribution ([04](04-vortex-black-box-components.md)) |
+| **Assembly** | Subassemblies and Vortices with the Fittings between them | Success logic (series, redundancy, failover) giving the Assembly's availability |
+| **Fitting** | Adapter between two interfaces (Element, Subassembly, or Vortex) | Unit, domain, or shape conversion; a Fitting with a ratio is a transformer relation applied at an interface |
+| **System** | One or more Assemblies, plus cross-Assembly Fittings | Top event, impact unit, evaluation policy, recalibration schedule |
 
 An Element of type Transformer models a domain change that is part of the physics of a component. A Fitting is the structural connection that carries such conversions between components. Fittings that carry a ratio use the same relation, \(e_2 = n e_1,\ f_1 = n f_2\).
 

@@ -24,371 +24,380 @@
       "missed_tick_policy": "accumulate"
     }
   },
-  "nodes": [
+  "assemblies": [
     {
-      "kind": "subassembly",
-      "node_id": "ec2-worker-az1",
-      "name": "EC2 worker (AZ1)",
-      "category": "ComputeNode",
-      "source_reference": {
-        "format": "UML-XMI",
-        "id": "Architecture/Tiers/Compute/AZ1/WorkerClass"
-      },
-      "interfaces": {
-        "provided": [
-          "WorkQueue"
-        ],
-        "required": [
-          "DatabaseSession"
-        ]
-      },
-      "elements": [
+      "assembly_id": "worker-pipeline",
+      "name": "Worker pipeline",
+      "nodes": [
         {
-          "element_id": "memory_pool",
-          "element_type": "capacitance",
-          "coefficient": 1.0,
-          "effort_unit": "bytes",
-          "flow_unit": "bytes/s",
-          "initial_state": {
-            "effort": 7301444000
+          "kind": "subassembly",
+          "node_id": "ec2-worker-az1",
+          "name": "EC2 worker (AZ1)",
+          "category": "ComputeNode",
+          "source_reference": {
+            "format": "UML-XMI",
+            "id": "Architecture/Tiers/Compute/AZ1/WorkerClass"
           },
-          "capacity_limit": 8589934592,
-          "damping_leak_coefficient": 0.02
-        },
-        {
-          "element_id": "thread_pool",
-          "element_type": "inductance",
-          "coefficient": 1.0,
-          "flow_unit": "tasks/s",
-          "initial_state": {
-            "flow": 120
+          "interfaces": {
+            "provided": [
+              "WorkQueue"
+            ],
+            "required": [
+              "DatabaseSession"
+            ]
           },
-          "capacity_limit": 200,
-          "damping_leak_coefficient": 0.01
-        },
-        {
-          "element_id": "connection_path",
-          "element_type": "resistance",
-          "coefficient": 0.5,
-          "effort_unit": "connections",
-          "flow_unit": "connections/s",
-          "capacity_limit": 100
-        }
-      ],
-      "numerical_integrator": {
-        "method": "Runge-Kutta-4",
-        "time_step_ms": 100
-      },
-      "failure_modes": [
-        {
-          "mode_id": "FM-EC2-001",
-          "name": "Severe memory leak (OOM risk)",
-          "mechanism": "CapacitiveAccumulation",
-          "element_ref": "memory_pool",
-          "rupture_threshold": 0.85,
-          "fragility": {
-            "family": "Weibull",
-            "parameters": {
-              "scale": 0.95,
-              "shape": 3.2
+          "elements": [
+            {
+              "element_id": "memory_pool",
+              "element_type": "capacitance",
+              "coefficient": 1.0,
+              "effort_unit": "bytes",
+              "flow_unit": "bytes/s",
+              "initial_state": {
+                "effort": 7301444000
+              },
+              "capacity_limit": 8589934592,
+              "damping_leak_coefficient": 0.02
+            },
+            {
+              "element_id": "thread_pool",
+              "element_type": "inductance",
+              "coefficient": 1.0,
+              "flow_unit": "tasks/s",
+              "initial_state": {
+                "flow": 120
+              },
+              "capacity_limit": 200,
+              "damping_leak_coefficient": 0.01
+            },
+            {
+              "element_id": "connection_path",
+              "element_type": "resistance",
+              "coefficient": 0.5,
+              "effort_unit": "connections",
+              "flow_unit": "connections/s",
+              "capacity_limit": 100
             }
+          ],
+          "numerical_integrator": {
+            "method": "Runge-Kutta-4",
+            "time_step_ms": 100
           },
-          "baseline_hazard": {
-            "rate_per_sec": {
-              "family": "Gamma",
-              "parameters": {
-                "shape": 2,
-                "rate": 4000000000.0
+          "failure_modes": [
+            {
+              "mode_id": "FM-EC2-001",
+              "name": "Severe memory leak (OOM risk)",
+              "mechanism": "CapacitiveAccumulation",
+              "element_ref": "memory_pool",
+              "rupture_threshold": 0.85,
+              "fragility": {
+                "family": "Weibull",
+                "parameters": {
+                  "scale": 0.95,
+                  "shape": 3.2
+                }
+              },
+              "baseline_hazard": {
+                "rate_per_sec": {
+                  "family": "Gamma",
+                  "parameters": {
+                    "shape": 2,
+                    "rate": 4000000000.0
+                  }
+                },
+                "multiplier": [
+                  {
+                    "signal": "memory_pressure",
+                    "weight": 1.2,
+                    "transform": "level"
+                  },
+                  {
+                    "signal": "error_rate",
+                    "weight": 0.4,
+                    "transform": "derivative"
+                  }
+                ]
+              },
+              "consequence": {
+                "amount": {
+                  "family": "Lognormal",
+                  "parameters": {
+                    "mu": 8.0,
+                    "sigma": 0.6
+                  }
+                },
+                "basis": "per_occurrence"
               }
             },
-            "multiplier": [
-              {
-                "signal": "memory_pressure",
-                "weight": 1.2,
-                "transform": "level"
+            {
+              "mode_id": "FM-EC2-002",
+              "name": "Connection starvation",
+              "mechanism": "ResistiveThrottle",
+              "element_ref": "connection_path",
+              "rupture_threshold": 0.9,
+              "fragility": {
+                "family": "Weibull",
+                "parameters": {
+                  "scale": 0.9,
+                  "shape": 4.0
+                }
               },
+              "consequence": {
+                "amount": {
+                  "family": "Lognormal",
+                  "parameters": {
+                    "mu": 7.5,
+                    "sigma": 0.5
+                  }
+                }
+              }
+            },
+            {
+              "mode_id": "FM-EC2-003",
+              "name": "Thread-pool starvation",
+              "mechanism": "InductiveMomentumCollapse",
+              "element_ref": "thread_pool",
+              "rupture_threshold": 0.8,
+              "fragility": {
+                "family": "Weibull",
+                "parameters": {
+                  "scale": 0.85,
+                  "shape": 2.5
+                }
+              },
+              "consequence": {
+                "amount": {
+                  "family": "Lognormal",
+                  "parameters": {
+                    "mu": 7.0,
+                    "sigma": 0.5
+                  }
+                }
+              }
+            }
+          ],
+          "probability_flow": {
+            "independent_dimensions": [
+              "memory_saturation_ratio",
+              "thread_saturation_ratio"
+            ],
+            "advection_drift_vector": [
+              0.35,
+              0.68
+            ],
+            "diffusion_tensor": [
+              [
+                0.02,
+                0.04
+              ],
+              [
+                0.04,
+                0.15
+              ]
+            ],
+            "reaction_cross_coupling_matrix": [
+              [
+                1.0,
+                2.15
+              ],
+              [
+                1.85,
+                1.0
+              ]
+            ],
+            "solver": "LaplaceNumericalInversion"
+          },
+          "propagation": {
+            "inputs": [
+              "FM-EC2-001",
+              "FM-EC2-003"
+            ],
+            "targets": [
+              "db-primary",
+              "lambda-runner-az1"
+            ],
+            "weights": [
+              [
+                0.85,
+                0.15
+              ],
+              [
+                0.3,
+                {
+                  "family": "Beta",
+                  "parameters": {
+                    "alpha": 7,
+                    "beta": 3
+                  }
+                }
+              ]
+            ],
+            "mode": "linear"
+          },
+          "escalation": {
+            "max_allowable_risk_entropy": 0.75,
+            "vortex_ref": "sr-agent-runner",
+            "mutation_target": "propagation.weights",
+            "max_weight_delta": 0.2
+          }
+        },
+        {
+          "kind": "subassembly",
+          "node_id": "db-primary",
+          "name": "Database primary",
+          "category": "DatabaseNode",
+          "elements": [
+            {
+              "element_id": "connection_pool",
+              "element_type": "resistance",
+              "coefficient": 0.2,
+              "capacity_limit": 500
+            }
+          ],
+          "failure_modes": [
+            {
+              "mode_id": "FM-DB-001",
+              "name": "Connection pool exhaustion",
+              "mechanism": "ResistiveThrottle",
+              "element_ref": "connection_pool",
+              "rupture_threshold": 0.9,
+              "fragility": {
+                "family": "Weibull",
+                "parameters": {
+                  "scale": 0.9,
+                  "shape": 4.0
+                }
+              },
+              "consequence": {
+                "amount": {
+                  "family": "Point",
+                  "parameters": {
+                    "value": 2500
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "vortex",
+          "node_id": "lambda-runner-az1",
+          "name": "Lambda agent runner (AZ1)",
+          "vortex_class": "opaque_system",
+          "io_contract": {
+            "inputs": [
               {
-                "signal": "error_rate",
-                "weight": 0.4,
-                "transform": "derivative"
+                "name": "task",
+                "type": "json"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "result",
+                "type": "json"
               }
             ]
           },
-          "consequence": {
-            "amount": {
-              "family": "Lognormal",
-              "parameters": {
-                "mu": 8.0,
-                "sigma": 0.6
-              }
-            },
-            "basis": "per_occurrence"
-          }
-        },
-        {
-          "mode_id": "FM-EC2-002",
-          "name": "Connection starvation",
-          "mechanism": "ResistiveThrottle",
-          "element_ref": "connection_path",
-          "rupture_threshold": 0.9,
-          "fragility": {
-            "family": "Weibull",
-            "parameters": {
-              "scale": 0.9,
-              "shape": 4.0
-            }
-          },
-          "consequence": {
-            "amount": {
-              "family": "Lognormal",
-              "parameters": {
-                "mu": 7.5,
-                "sigma": 0.5
-              }
-            }
-          }
-        },
-        {
-          "mode_id": "FM-EC2-003",
-          "name": "Thread-pool starvation",
-          "mechanism": "InductiveMomentumCollapse",
-          "element_ref": "thread_pool",
-          "rupture_threshold": 0.8,
-          "fragility": {
-            "family": "Weibull",
-            "parameters": {
-              "scale": 0.85,
-              "shape": 2.5
-            }
-          },
-          "consequence": {
-            "amount": {
-              "family": "Lognormal",
-              "parameters": {
-                "mu": 7.0,
-                "sigma": 0.5
-              }
-            }
-          }
-        }
-      ],
-      "probability_flow": {
-        "independent_dimensions": [
-          "memory_saturation_ratio",
-          "thread_saturation_ratio"
-        ],
-        "advection_drift_vector": [
-          0.35,
-          0.68
-        ],
-        "diffusion_tensor": [
-          [
-            0.02,
-            0.04
-          ],
-          [
-            0.04,
-            0.15
-          ]
-        ],
-        "reaction_cross_coupling_matrix": [
-          [
-            1.0,
-            2.15
-          ],
-          [
-            1.85,
-            1.0
-          ]
-        ],
-        "solver": "LaplaceNumericalInversion"
-      },
-      "propagation": {
-        "inputs": [
-          "FM-EC2-001",
-          "FM-EC2-003"
-        ],
-        "targets": [
-          "db-primary",
-          "lambda-runner-az1"
-        ],
-        "weights": [
-          [
-            0.85,
-            0.15
-          ],
-          [
-            0.3,
-            {
+          "uncertainty": {
+            "reliability": {
               "family": "Beta",
               "parameters": {
-                "alpha": 7,
-                "beta": 3
+                "alpha": 999,
+                "beta": 1
               }
-            }
-          ]
-        ],
-        "mode": "linear"
-      },
-      "escalation": {
-        "max_allowable_risk_entropy": 0.75,
-        "vortex_ref": "sr-agent-runner",
-        "mutation_target": "propagation.weights",
-        "max_weight_delta": 0.2
-      }
-    },
-    {
-      "kind": "subassembly",
-      "node_id": "db-primary",
-      "name": "Database primary",
-      "category": "DatabaseNode",
-      "elements": [
-        {
-          "element_id": "connection_pool",
-          "element_type": "resistance",
-          "coefficient": 0.2,
-          "capacity_limit": 500
-        }
-      ],
-      "failure_modes": [
-        {
-          "mode_id": "FM-DB-001",
-          "name": "Connection pool exhaustion",
-          "mechanism": "ResistiveThrottle",
-          "element_ref": "connection_pool",
-          "rupture_threshold": 0.9,
-          "fragility": {
-            "family": "Weibull",
-            "parameters": {
-              "scale": 0.9,
-              "shape": 4.0
+            },
+            "knowledge_level": "observed",
+            "evidence": {
+              "trials": 1000,
+              "successes": 999
             }
           },
           "consequence": {
             "amount": {
               "family": "Point",
               "parameters": {
-                "value": 2500
+                "value": 500
+              }
+            }
+          }
+        },
+        {
+          "kind": "vortex",
+          "node_id": "sr-agent-runner",
+          "name": "Remediation agent",
+          "vortex_class": "inference",
+          "io_contract": {
+            "inputs": [
+              {
+                "name": "state",
+                "type": "json",
+                "description": "Failure state vector and context"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "weight_adjustment",
+                "type": "matrix",
+                "range": {
+                  "min": -0.2,
+                  "max": 0.2
+                }
+              }
+            ]
+          },
+          "uncertainty": {
+            "reliability": {
+              "family": "Beta",
+              "parameters": {
+                "alpha": 18,
+                "beta": 2
+              }
+            },
+            "knowledge_level": "vendor_attested",
+            "variance_limit": 0.01
+          },
+          "consequence": {
+            "amount": {
+              "family": "Point",
+              "parameters": {
+                "value": 1000
               }
             }
           }
         }
-      ]
-    },
-    {
-      "kind": "vortex",
-      "node_id": "lambda-runner-az1",
-      "name": "Lambda agent runner (AZ1)",
-      "vortex_class": "opaque_system",
-      "io_contract": {
+      ],
+      "connections": [
+        {
+          "fitting_id": "fit-worker-db",
+          "from": {
+            "node_id": "ec2-worker-az1",
+            "port": "DatabaseSession"
+          },
+          "to": {
+            "node_id": "db-primary"
+          },
+          "transform": {
+            "type": "identity"
+          }
+        }
+      ],
+      "structure": {
+        "operator": "all",
         "inputs": [
           {
-            "name": "task",
-            "type": "json"
-          }
-        ],
-        "outputs": [
+            "node": "ec2-worker-az1"
+          },
           {
-            "name": "result",
-            "type": "json"
+            "node": "db-primary"
           }
         ]
-      },
-      "uncertainty": {
-        "reliability": {
-          "family": "Beta",
-          "parameters": {
-            "alpha": 999,
-            "beta": 1
-          }
-        },
-        "knowledge_level": "observed",
-        "evidence": {
-          "trials": 1000,
-          "successes": 999
-        }
-      },
-      "consequence": {
-        "amount": {
-          "family": "Point",
-          "parameters": {
-            "value": 500
-          }
-        }
-      }
-    },
-    {
-      "kind": "vortex",
-      "node_id": "sr-agent-runner",
-      "name": "Remediation agent",
-      "vortex_class": "inference",
-      "io_contract": {
-        "inputs": [
-          {
-            "name": "state",
-            "type": "json",
-            "description": "Failure state vector and context"
-          }
-        ],
-        "outputs": [
-          {
-            "name": "weight_adjustment",
-            "type": "matrix",
-            "range": {
-              "min": -0.2,
-              "max": 0.2
-            }
-          }
-        ]
-      },
-      "uncertainty": {
-        "reliability": {
-          "family": "Beta",
-          "parameters": {
-            "alpha": 18,
-            "beta": 2
-          }
-        },
-        "knowledge_level": "vendor_attested",
-        "variance_limit": 0.01
-      },
-      "consequence": {
-        "amount": {
-          "family": "Point",
-          "parameters": {
-            "value": 1000
-          }
-        }
-      }
-    }
-  ],
-  "connections": [
-    {
-      "fitting_id": "fit-worker-db",
-      "from": {
-        "node_id": "ec2-worker-az1",
-        "port": "DatabaseSession"
-      },
-      "to": {
-        "node_id": "db-primary"
-      },
-      "transform": {
-        "type": "identity"
       }
     }
   ],
   "top_event": {
     "name": "Worker pipeline unavailable",
     "structure": {
-      "operator": "all",
-      "inputs": [
-        {
-          "node": "ec2-worker-az1"
-        },
-        {
-          "node": "db-primary"
-        }
-      ]
+      "assembly": "worker-pipeline"
     },
     "consequence": {
       "amount": {

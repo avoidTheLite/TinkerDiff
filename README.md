@@ -14,8 +14,10 @@ These terms are canonical across all documents and the schema.
 |------|------------|
 | **Element** | The atomic unit: a single physical parameter, differential equation, or discrete transformer. Four types: Capacitance, Inductance, Resistance, Transformer. |
 | **Subassembly** | A group of interconnected Elements that models one real component (a compute node, a database tier, a sensor array, a microservice pipeline). Hosts the component's failure modes and downstream impact weights. |
+| **Assembly** | A collection of Subassemblies and Vortices, with the Fittings between them and, optionally, the success logic that defines the Assembly's own availability (for example "2 of 3 zones" or "primary with failover"). Without success logic, an Assembly is available only if every member is. |
 | **Fitting** | A typed adapter between interfaces: it maps one Element's or Subassembly's output to another's input, converting units, domains, or data shape. |
 | **Vortex** | A black-box component whose internals are not modeled, or whose behavior is non-deterministic (for example an inference agent). Specified by its I/O contract and a mandatory uncertainty distribution. A Vortex may stand in for a whole system or Subassembly; if its internals become known it can be replaced by a Subassembly of Elements. |
+| **System** | The whole model: one or more Assemblies plus the top event, impact unit, and evaluation policy (horizon, recalibration schedule, risk measures). |
 | **Hub** | The planned registry and package manager for versioned, shareable Elements and Subassemblies. Not yet specified. |
 
 ### Evaluated states

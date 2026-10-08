@@ -411,6 +411,23 @@
       "tolerance": {
         "relative": 1e-09
       }
+    },
+    {
+      "id": "model.cloud-service.assembly-availability",
+      "spec": "examples/cloud-service-uptime section 3; 07-specification section 2",
+      "description": "Per-assembly availability for schema/examples/cloud-service.json (edge uses the CDN prior mean 0.9)",
+      "input": {
+        "model": "schema/examples/cloud-service.json"
+      },
+      "expected": {
+        "edge": 0.9,
+        "compute": 0.9999932612425022,
+        "data": 0.99994905,
+        "service": 0.8999480804272577
+      },
+      "tolerance": {
+        "absolute": 1e-12
+      }
     }
   ]
 }

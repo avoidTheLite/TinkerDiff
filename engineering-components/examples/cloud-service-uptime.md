@@ -14,7 +14,7 @@ Prerequisites: [02 Risk Model](../02-risk-model.md), [04 Vortex Components](../0
  [ DB primary + standby ]  Subassembly with failover
 ```
 
-All three tiers are required in series. The service is unavailable if the CDN is, if fewer than two zones are healthy, or if the database tier is down.
+Each tier is an Assembly (`edge`, `compute`, `data`) with its own success logic, and the three Assemblies are required in series. The service is unavailable if the CDN is, if fewer than two zones are healthy, or if the database tier is down.
 
 ## 2. Tier Models
 
@@ -87,9 +87,9 @@ A point-SLA calculation that multiplies advertised figures (0.9999 for the CDN) 
 In `cloud-service.json` each availability zone is a Subassembly with two hazard-driven modes (the Lambda runner and the EC2 worker), so its availability is the competing-risk product of [03 §4](../03-failure-modes.md) and equals \(0.9995 \times 0.999\). The database primary and standby each have one mode. The top-level structure is
 
 ```
-all( cdn,
-     k_of_n(k=2, az1, az2, az3),
-     failover(p=0.95, db-primary, db-standby) )
+all( edge,
+     compute,   = k_of_n(k=2, az1, az2, az3)
+     data )     = failover(p=0.95, db-primary, db-standby)
 ```
 
 with a top-event consequence of \$10,000 per hour of unavailability.

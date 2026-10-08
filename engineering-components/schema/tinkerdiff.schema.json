@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "tinkerdiff.schema.json",
   "title": "TinkerDiff System Model",
-  "description": "Normative object model for a TinkerDiff system: Subassemblies of Elements, Vortices (black-box components), Fittings, success logic, and evaluation policy. The root validates a system model; #/$defs/EvaluationResult validates engine output.",
+  "description": "Normative object model for a TinkerDiff system: Assemblies of Subassemblies (built from Elements) and Vortices (black-box components), wired by Fittings, with success logic, an impact unit, and an evaluation policy. The root validates a system model; #/$defs/EvaluationResult validates engine output.",
   "type": "object",
-  "required": ["schema_version", "system_id", "impact_unit", "evaluation", "nodes"],
+  "required": ["schema_version", "system_id", "impact_unit", "evaluation", "assemblies"],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
@@ -17,21 +17,16 @@
     "description": { "type": "string" },
     "impact_unit": { "$ref": "#/$defs/ImpactUnit" },
     "evaluation": { "$ref": "#/$defs/Evaluation" },
-    "nodes": {
+    "assemblies": {
       "type": "array",
       "minItems": 1,
-      "items": {
-        "oneOf": [
-          { "$ref": "#/$defs/Subassembly" },
-          { "$ref": "#/$defs/Vortex" }
-        ]
-      },
-      "description": "Subassemblies and Vortices. node_id values must be unique across the model."
+      "items": { "$ref": "#/$defs/Assembly" },
+      "description": "Collections of Subassemblies and Vortices. assembly_id and node_id values must each be unique across the whole model."
     },
     "connections": {
       "type": "array",
       "items": { "$ref": "#/$defs/Fitting" },
-      "description": "Fittings wiring node interfaces together."
+      "description": "Fittings wiring nodes in different Assemblies together."
     },
     "top_event": { "$ref": "#/$defs/TopEvent" }
   },
@@ -401,6 +396,37 @@
       }
     },
 
+    "Assembly": {
+      "description": "A collection of Subassemblies and Vortices with their internal Fittings and, optionally, the success logic that defines the Assembly's own availability. Without a structure, the Assembly is available only if every member node is (series).",
+      "type": "object",
+      "required": ["assembly_id", "name", "nodes"],
+      "additionalProperties": false,
+      "properties": {
+        "assembly_id": { "$ref": "#/$defs/Identifier" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/Subassembly" },
+              { "$ref": "#/$defs/Vortex" }
+            ]
+          }
+        },
+        "connections": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Fitting" },
+          "description": "Fittings between member nodes of this Assembly."
+        },
+        "structure": {
+          "$ref": "#/$defs/Structure",
+          "description": "Success logic over member nodes only (leaves use 'node')."
+        }
+      }
+    },
+
     "Subassembly": {
       "description": "A group of Elements modeling one real component.",
       "type": "object",
@@ -511,13 +537,19 @@
     },
 
     "Structure": {
-      "description": "Success logic over nodes. A leaf names a node; an operator combines inputs. all: every input must succeed (series). any: at least one (1-of-N). k_of_n: at least k succeed. failover: inputs are [primary, standby]; fails if primary fails and (failover does not succeed or standby fails).",
+      "description": "Success logic. A leaf names a node or an assembly; an operator combines inputs. all: every input must succeed (series). any: at least one (1-of-N). k_of_n: at least k succeed. failover: inputs are [primary, standby]; fails if primary fails and (failover does not succeed or standby fails).",
       "oneOf": [
         {
           "type": "object",
           "required": ["node"],
           "additionalProperties": false,
           "properties": { "node": { "$ref": "#/$defs/Identifier" } }
+        },
+        {
+          "type": "object",
+          "required": ["assembly"],
+          "additionalProperties": false,
+          "properties": { "assembly": { "$ref": "#/$defs/Identifier" } }
         },
         {
           "type": "object",
@@ -607,6 +639,20 @@
               }
             },
             "epistemic_variance_share": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "assemblies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["assembly_id", "availability_mean"],
+            "additionalProperties": false,
+            "properties": {
+              "assembly_id": { "$ref": "#/$defs/Identifier" },
+              "availability_mean": { "$ref": "#/$defs/Probability" },
+              "availability_std_dev": { "type": "number", "minimum": 0 },
+              "flow_state": { "enum": ["Laminar", "Turbulent"] }
+            }
           }
         },
         "nodes": {

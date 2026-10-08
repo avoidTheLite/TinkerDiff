@@ -158,10 +158,10 @@ Equivalently, \(\ln Z\) is the sum \(\ln X + \ln Y\). Engines may evaluate these
 
 A system declares a **top event** (for example "service unavailable") with two parts:
 
-- a **structure**: success logic over nodes, built recursively from `all` (series), `any` (1-of-N), `k_of_n`, and `failover` operators using the rules of §4, with an optional common-cause factor on an operator;
+- a **structure**: success logic over nodes and Assemblies, built recursively from `all` (series), `any` (1-of-N), `k_of_n`, and `failover` operators using the rules of §4, with an optional common-cause factor on an operator;
 - a **consequence** of the top event failing.
 
-The availability of each node is its survival probability over the horizon: the competing-risk product over its failure modes for a Subassembly ([03](03-failure-modes.md) §4), or the sampled reliability for a Vortex ([04](04-vortex-black-box-components.md) §3.2). Node availabilities are then combined through the structure.
+The availability of each node is its survival probability over the horizon: the competing-risk product over its failure modes for a Subassembly ([03](03-failure-modes.md) §4), or the sampled reliability for a Vortex ([04](04-vortex-black-box-components.md) §3.2). Each Assembly combines the availabilities of its member nodes through its own structure (series if none is given), and the top-event structure then combines nodes and Assemblies. Members of an Assembly that its structure does not reference do not affect its availability, but they still take part in propagation and escalation.
 
 ### 5.2 Propagation
 

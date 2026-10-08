@@ -60,7 +60,7 @@ How a Vortex failure affects other nodes is often as uncertain as its reliabilit
 
 ## 4. Interaction with the Rest of the Model
 
-A Vortex participates in redundancy groups, series structures, and the impact matrix exactly as a Subassembly does. The engine does not need its internals; it needs its reliability distribution, its consequence, and its impact weights.
+A Vortex participates in Assemblies, success structures (series, redundancy, failover), and the impact matrix exactly as a Subassembly does. The engine does not need its internals; it needs its reliability distribution, its consequence, and its impact weights.
 
 ## 5. The Non-Determinism Boundary
 

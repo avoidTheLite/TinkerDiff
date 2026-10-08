@@ -21,10 +21,13 @@ A model (the schema root) is a **System**:
 System
  ├─ impact_unit            unit all consequences are expressed in
  ├─ evaluation             horizon, sampling interval, recalibration policy, risk measures
- ├─ nodes[]
- │    ├─ Subassembly       elements[], failure_modes[], propagation, escalation, ...
- │    └─ Vortex            io_contract, uncertainty (mandatory), consequence
- ├─ connections[]          Fittings between node interfaces
+ ├─ assemblies[]
+ │    ├─ nodes[]
+ │    │    ├─ Subassembly  elements[], failure_modes[], propagation, escalation, ...
+ │    │    └─ Vortex       io_contract, uncertainty (mandatory), consequence
+ │    ├─ connections[]     Fittings between member nodes
+ │    └─ structure         success logic over member nodes (optional; series if absent)
+ ├─ connections[]          Fittings between nodes in different Assemblies
  └─ top_event              success logic (Structure) and its consequence
 ```
 
@@ -37,7 +40,7 @@ System
 | `Propagation`, `ProbabilityFlow`, `Evaluation` | [05 Execution Model](05-execution-model.md) |
 | `RecalibrationPolicy` | [06 Drift Control](06-drift-control-and-recalibration.md) |
 | `Structure`, `TopEvent` | [02 Risk Model](02-risk-model.md) §5 |
-| `Fitting`, `Endpoint`, `Subassembly` | [01 Foundations](01-foundations.md) §4 |
+| `Assembly`, `Fitting`, `Endpoint`, `Subassembly` | [01 Foundations](01-foundations.md) §4 |
 | `EvaluationResult` | §6 below |
 
 ### 2.1 Key Design Rules Encoded in the Schema
@@ -70,10 +73,11 @@ A system is described in two layers ([01](01-foundations.md) §7): a structural 
 
 Rules:
 
-1. Each architecture component with parameter data becomes a **Subassembly**. Its architecture identifier is kept in `source_reference.id`, and its provided and required interfaces in `interfaces`.
-2. A component with **no** parameter data hydrates to a **Vortex** with `knowledge_level: unknown` and a conservative prior, so missing information increases risk rather than being ignored. The I/O contract is taken from the component's interfaces.
-3. Connectors become **Fittings** between the corresponding interfaces.
-4. The hydrator never invents parameters for a Subassembly. A Subassembly with missing parameters is a validation error (§4).
+1. Each architecture grouping (a UML package or subsystem) becomes an **Assembly**; components outside any grouping go into a default Assembly.
+2. Each architecture component with parameter data becomes a **Subassembly**. Its architecture identifier is kept in `source_reference.id`, and its provided and required interfaces in `interfaces`.
+3. A component with **no** parameter data hydrates to a **Vortex** with `knowledge_level: unknown` and a conservative prior, so missing information increases risk rather than being ignored. The I/O contract is taken from the component's interfaces.
+4. Connectors become **Fittings** between the corresponding interfaces.
+5. The hydrator never invents parameters for a Subassembly. A Subassembly with missing parameters is a validation error (§4).
 
 ## 4. Validation
 
@@ -81,8 +85,9 @@ Validation has two stages. The first is JSON Schema validation, which an engine 
 
 | Check | Rule |
 |-------|------|
-| Unique identifiers | `node_id` is unique across `nodes`; `element_id` is unique within a Subassembly; `mode_id` is unique across the model |
-| Reference integrity | `Endpoint.node_id`, `Structure` leaves, `Propagation.targets`, `Escalation.vortex_ref`, and `refinement.subassembly_ref` must name existing nodes (the last may name a node outside the model) |
+| Unique identifiers | `assembly_id` is unique across the model; `node_id` is unique across all Assemblies; `element_id` is unique within a Subassembly; `mode_id` is unique across the model |
+| Reference integrity | `Endpoint.node_id`, `Structure` leaves, `Propagation.targets`, `Escalation.vortex_ref`, and `refinement.subassembly_ref` must name existing nodes (the last may name a node outside the model); an `assembly` leaf must name an existing Assembly |
+| Assembly scope | An Assembly's `structure` references only its own member nodes; an Assembly's `connections` join only its own members; `System.connections` join nodes in different Assemblies; the top-event structure may reference nodes or Assemblies |
 | Element references | `FailureMode.element_ref` must name an Element in the same Subassembly; `Endpoint.element_id` must name an Element in the referenced node |
 | Propagation shape | `weights` has `len(targets)` rows and `len(inputs)` columns; each `inputs` entry is a `mode_id` of the same node |
 | Escalation target | `vortex_ref` must name a Vortex of class `inference` |
@@ -113,7 +118,7 @@ Engines choose their own concurrency mechanisms, numerical libraries, and sampli
 |-------|---------|
 | `flow_state`, `turbulence_causes` | Laminar or Turbulent, with the conditions from [04](04-vortex-black-box-components.md) §6 that apply |
 | `risk` | `expected_value`, `quantiles`, optional tail measure, and the epistemic share of variance ([02](02-risk-model.md) §1.2) |
-| `nodes` | Per-node availability, attribution entropy, and state |
+| `assemblies`, `nodes` | Per-Assembly and per-node availability, attribution entropy, and state |
 | `drift` | Accumulated variance, accuracy confidence, last recalibration time, and missed ticks ([06](06-drift-control-and-recalibration.md) §4) |
 
 ## 7. Conformance Vectors
