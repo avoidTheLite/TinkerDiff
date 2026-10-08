@@ -1,27 +1,52 @@
-
 # TinkerDiff
 
-TinkerDiff is a cross-domain systems engineering framework designed around a single, powerful philosophy: one underlying mathematical framework to govern everything from physical infrastructure to software systems.
-Whether you are modeling a hydraulic pump, a distributed software data pipeline, a probabilistic risk matrix, or a neural network, TinkerDiff allows you to snap components together seamlessly. By treating software logic and physical laws as interchangeable engineering entities, TinkerDiff ensures your entire system architecture flows as one cohesive machine.
+TinkerDiff is a framework for modeling systems from atomic mathematical building blocks. One set of effort/flow equations covers physical infrastructure, software systems, and probabilistic risk. The primary application is site reliability engineering (SRE): computing the risk of a modeled system from the likelihood of failure, the impact of failure, and an object model that handles components whose internals are unknown, where less knowledge increases risk.
 
-## System Taxonomy & Architecture
+The specification is language-agnostic. Reference engines exist in Go and Python and are expected to conform to the schema and conformance vectors in `engineering-components/`.
 
-TinkerDiff completely replaces abstract software naming conventions with tangible, rigorous engineering metaphors. The architecture is broken down into three logical layers: structural building blocks, inference engines, and mathematical state evaluations.
+## Vocabulary
 
-### Structural Units
+These terms are canonical across all documents and the schema.
 
-• Elements: The absolute atomic building blocks of the framework. An Element represents a single standalone physical parameter, a rigid differential equation, or a discrete software data transformer. It is the lowest indivisible unit of your system logic.
-• Subassemblies: A logically grouped collection of interconnected Elements working in tandem. A Subassembly represents a coherent macro asset—such as a mechanical engine block, a multi-sensor array, or a complex software microservice pipeline.
-• Fittings: The literal adapters, translators, and transformers of the ecosystem. Just like a physical T-joint, elbow, or coupling, a Fitting makes non-similar Elements or Subassemblies instantly interoperable, allowing a raw software stream to map directly into a physical boundary equation.
-• The Hub: The centralized global registry, package manager, and asset discovery network where engineers share, version, and download pre-built Elements and Subassemblies.
+### Structural units
 
-### Inference Layer
+| Term | Definition |
+|------|------------|
+| **Element** | The atomic unit: a single physical parameter, differential equation, or discrete transformer. Four types: Capacitance, Inductance, Resistance, Transformer. |
+| **Subassembly** | A group of interconnected Elements that models one real component (a compute node, a database tier, a sensor array, a microservice pipeline). Hosts the component's failure modes and downstream impact weights. |
+| **Fitting** | A typed adapter between interfaces: it maps one Element's or Subassembly's output to another's input, converting units, domains, or data shape. |
+| **Vortex** | A black-box component whose internals are not modeled, or whose behavior is non-deterministic (for example an inference agent). Specified by its I/O contract and a mandatory uncertainty distribution. A Vortex may stand in for a whole system or Subassembly; if its internals become known it can be replaced by a Subassembly of Elements. |
+| **Hub** | The planned registry and package manager for versioned, shareable Elements and Subassemblies. Not yet specified. |
 
-• Vortices / Vortex: Dedicated blocks or layers handling non-linear neural approximations, machine learning inference, or predictive heuristics.
-	• The Math: In computational fluid dynamics, a vortex introduces a highly localized, complex, non-linear singularity into an otherwise predictable flow field. Mathematically, it operates on advanced linear algebra (matrix eigenvalues, tensor decomposition). A Vortex handles the messy, unmodeled real-world data where rigid deterministic formulas run out of track.
+### Evaluated states
 
-### Mathematical Evaluated States
+| Term | Definition |
+|------|------------|
+| **Laminar** | The evaluation is deterministic and inside validated bounds: no Vortex is outside its declared limits, no escalation boundary is crossed, and the approximation-accuracy confidence is at or above its minimum. |
+| **Turbulent** | At least one of those conditions fails. Results remain usable but carry widened uncertainty and are flagged. See [04 Vortex Components](engineering-components/04-vortex-black-box-components.md) for the exact conditions. |
 
-TinkerDiff does not simply track binary software success or failure. Instead, the runtime continuously evaluates the physical, mathematical, and boundary integrity of your execution pipeline.
-• Laminar: The optimal system state property. Represents parallel, frictionless fluid flow. It flags that the entire pipeline is operating cleanly within its bounded parameters. The model is completely deterministic, stable, and highly predictable.
-• Turbulent: The warning or unconstrained state property. Represents chaotic, non-parallel fluid flow. The system flags a state as Turbulent whenever it encounters non-determinism, unconstrained boundary math, or when the presence of a Vortex introduces approximation that pushes calculations outside of strict, validated engineering safety thresholds.
+## Risk Model in Brief
+
+For each scenario \(S_i\), risk combines a likelihood \(p_i\) and an impact \(x_i\). Both are treated as random variables because their parameters are uncertain. The result is a distribution of risk with an expected value, reported in a unit chosen by the modeling team (dollars by default; any quantifiable outcome is supported). Black-box components contribute wide distributions, so missing knowledge raises tail risk by construction.
+
+## Repository Layout
+
+```
+README.md                          this file: overview and vocabulary
+engineering-components/            language-agnostic specification
+  README.md                        reading order and document map
+  notation.md                      symbols and conventions
+  01-foundations.md                effort/flow, Elements, composition
+  02-risk-model.md                 likelihood, impact, uncertainty, risk output
+  03-failure-modes.md              FMEA channels and competing risk
+  04-vortex-black-box-components.md  Vortex components and the non-determinism boundary
+  05-execution-model.md            operators, cost tiers, interval evaluation
+  06-drift-control-and-recalibration.md  scheduled re-anchoring and accuracy accounting
+  07-specification.md              how the schema, hydration, and conformance fit together
+  schema/                          JSON Schema (normative) and examples
+  conformance/                     language-neutral test vectors
+  examples/                        worked examples
+engine/                            reference engines (Go, Python); in progress
+```
+
+The JSON Schema in `engineering-components/schema/` is the source of truth for the object model. The Markdown documents explain it.
