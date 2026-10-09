@@ -20,8 +20,10 @@ This directory specifies the TinkerDiff model independently of any implementatio
 - `schema/tinkerdiff.schema.json`: normative object model.
 - `schema/examples/`: schema-valid example models.
 - `conformance/vectors.json`: input/expected-output pairs every engine must reproduce.
+- `analogies/`: OpenModelica baselines and Resistance form catalog (equation deltas for equivalent models).
 - `examples/cloud-service-uptime.md`: SRE worked example.
 - `examples/learning-simulator.md`: behavioral reinforcement worked example.
+- `../tools/openmodelica_compare/`: compare check for named-component drift against MSL helpOM.
 
 ## Conventions for This Specification
 
