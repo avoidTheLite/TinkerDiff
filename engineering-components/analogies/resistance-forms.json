@@ -1,0 +1,97 @@
+{
+  "schema_version": "0.1.0",
+  "description": "Catalog of Resistance Element forms: mathematical laws, dials, and when each form is useful for scaling or soft filtering in non-physical / risk models.",
+  "default_form": "linear",
+  "forms": [
+    {
+      "id": "linear",
+      "name": "Linear resistance",
+      "equation": "e = R * f",
+      "latex": "e = R\\,f",
+      "parameters": ["R"],
+      "closed_form_friendly": true,
+      "filter_role": "Proportional drop; with Capacitance forms a first-order low-pass on effort under flow drive.",
+      "selection_hints": [
+        "Gaussian or small-signal residuals",
+        "Default for reliability decision trees",
+        "Prefer when state-space / matrix exponential evaluation is required"
+      ],
+      "standard_labels": ["Ohm", "viscous_damper", "proportional"]
+    },
+    {
+      "id": "orifice",
+      "name": "Orifice (quadratic)",
+      "equation": "f = Cd * A * sign(e) * sqrt(2 * abs(e) / rho)",
+      "latex": "f = C_d A\\,\\mathrm{sign}(e)\\sqrt{2|e|/\\rho}",
+      "parameters": ["Cd", "A", "rho"],
+      "closed_form_friendly": false,
+      "filter_role": "Amplitude-dependent gate: weak drives pass little flow; large spikes open. Soft high-pass on amplitude, not on frequency alone.",
+      "selection_hints": [
+        "Heavy-tailed or bursty spike trains",
+        "Need stronger response only after material pressure builds",
+        "Hydraulic valve / Bernoulli-style equivalent model"
+      ],
+      "standard_labels": ["Bernoulli_orifice", "quadratic_loss", "sqrt_law"]
+    },
+    {
+      "id": "check",
+      "name": "Check (one-way)",
+      "equation": "f = max(0, f_core(e)) where f_core is linear or orifice",
+      "latex": "f = \\max\\big(0,\\,f_{\\mathrm{core}}(e)\\big)",
+      "parameters": ["core_form", "core_parameters"],
+      "closed_form_friendly": false,
+      "filter_role": "Rectifier: blocks reverse flow; locks escalation or habit in one direction.",
+      "selection_hints": [
+        "Irreversible transitions",
+        "Diode-like failure propagation",
+        "Prevent backflow into a recovered state"
+      ],
+      "standard_labels": ["diode", "one_way", "check_valve"]
+    },
+    {
+      "id": "deadzone",
+      "name": "Deadzone (threshold)",
+      "equation": "f = 0 if abs(e) < e0 else f_core(e - sign(e)*e0) or f_core(e)",
+      "latex": "f=0\\ (|e|<e_0);\\ \\text{else core}",
+      "parameters": ["e0", "core_form", "core_parameters"],
+      "closed_form_friendly": false,
+      "filter_role": "Ignores sub-threshold noise; passes only peaks over threshold.",
+      "selection_hints": [
+        "Peaks-over-threshold style alerting",
+        "Suppress chatter below an SLO margin",
+        "Combine with Capacitance so only sustained pressure crosses e0"
+      ],
+      "standard_labels": ["dead_zone", "peaks_over_threshold", "threshold"]
+    },
+    {
+      "id": "saturation",
+      "name": "Saturation (rate limit)",
+      "equation": "f = clip(f_core(e), -f_max, f_max)",
+      "latex": "f = \\mathrm{clip}(f_{\\mathrm{core}}(e), -f_{\\max}, f_{\\max})",
+      "parameters": ["f_max", "core_form", "core_parameters"],
+      "closed_form_friendly": false,
+      "filter_role": "Hard ceiling on throughput; compressive response at high drive.",
+      "selection_hints": [
+        "Hard capacity or rate SLOs",
+        "Queue drain or ticket rate caps",
+        "Prevent unbounded linear response under extreme effort"
+      ],
+      "standard_labels": ["clipping", "rate_limit", "limiter"]
+    },
+    {
+      "id": "power_law",
+      "name": "Power-law resistance",
+      "equation": "f = k * sign(e) * abs(e)**alpha",
+      "latex": "f = k\\,\\mathrm{sign}(e)\\,|e|^{\\alpha}",
+      "parameters": ["k", "alpha"],
+      "closed_form_friendly": false,
+      "filter_role": "Tunable sensitivity: alpha<1 compressive (like orifice family), alpha>1 expansive.",
+      "selection_hints": [
+        "Need a continuous family between linear (alpha=1) and orifice-like",
+        "Fit empirical effort–flow curves",
+        "alpha != 1 implies linearization + drift accounting"
+      ],
+      "standard_labels": ["power_law", "Hölder", "nonlinear_resistor"]
+    }
+  ]
+}

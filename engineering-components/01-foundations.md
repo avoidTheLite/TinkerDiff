@@ -63,10 +63,10 @@ Every Element manipulates effort and flow in one of four ways:
 
 | Type | Hydraulic | Electrical | Mechanical (force–velocity) | Software / informational | Base relation |
 |------|-----------|------------|-----------------------------|--------------------------|---------------|
-| **Capacitance** (C): stores effort | Accumulator, tank (stores pressure) | Capacitor (stores voltage) | Spring (stores force) | Database, queue (stores backlog) | $e = \frac{1}{C}\int f\,dt$ |
+| **Capacitance** (C): stores effort | Pressurized chamber / tank (stores pressure) | Capacitor (stores voltage) | Spring (stores force); leaky C ↔ series spring–damper | Database, queue (stores backlog) | $e = \frac{1}{C}\int f\,dt$ |
 | **Inductance** (I): stores flow | Fluid inertance (maintains flow) | Inductor (maintains current) | Mass, flywheel (maintains velocity) | Processing buffer (maintains execution momentum) | $f = \frac{1}{I}\int e\,dt$ |
-| **Resistance** (R): dissipates energy | Orifice, calibrated leak (pressure drop) | Resistor (voltage drop) | Damper, friction (force drop) | Network latency, drop rate (limits throughput) | $e = R\,f$ |
-| **Transformer** (TF): converts domains or scales | Pump (mechanical to fluid) | Motor (electrical to mechanical) | Lever, gearbox | API gateway, serializer (format change) | $e_2 = n\,e_1,\quad f_1 = n\,f_2$ |
+| **Resistance** (R): dissipates / shapes flow | Orifice, valve, calibrated leak | Resistor (voltage drop) | Damper, friction (force drop) | Network latency, drop rate (limits throughput) | $e = R\,f$ (default `linear` form; see §5.1) |
+| **Transformer** (TF): converts domains or scales | Pump (mechanical to fluid) | Ideal transformer / gear ratio | Lever, gearbox | API gateway, serializer (format change) | $e_2 = n\,e_1,\quad f_1 = n\,f_2$ |
 
 The transformer relation conserves power: $e_2 f_2 = n e_1 f_2 = e_1 f_1$.
 
@@ -92,23 +92,25 @@ Real storage Elements dissipate and are bounded. Each Element may carry:
 
 An Element of type Transformer models a domain change that is part of the physics of a component. A Fitting is the structural connection that carries such conversions between components. Fittings that carry a ratio use the same relation, $e_2 = n e_1,\ f_1 = n f_2$.
 
-## 5. Worked Example: Hydraulic Accumulator Circuit
+## 5. Worked Example: Pressurized Chamber Circuit
 
-A closed hydraulic circuit with a source, an accumulator, a control valve, and a leak is the reference physical model.
+A closed hydraulic circuit with a source, a pressurized chamber, a control valve, and a leak is the reference **equivalent model**. Physical names here label *roles* (what the block does), not full thermo-fluid products. Heat transfer and medium-property detail are intentionally omitted.
 
-**Accumulator (capacitance with leak).** The rate of pressure change is driven by the bulk modulus $K$, the accumulator volume $V$, the inflow $Q_{\text{in}}$, valve outflow, and leakage:
+**Pressurized chamber (simplified accumulator assembly).** A Capacitance Element with optional leak $\gamma$: fixed geometric volume $V$, bulk modulus $K$, capacitance $C = V/K$. Net inflow raises pressure; $\gamma$ dissipates it. Closest mechanical dual of the leaky chamber is a **series** spring–damper (Maxwell): storage plus relaxation under shared effort — not a parallel Kelvin–Voigt `SpringDamper`.
 
 $$
 \frac{dP}{dt} = \frac{K}{V}\left(Q_{\text{in}}(t) - Q_{\text{valve}}(P) - Q_{\text{leak}}(P)\right)
 $$
 
-**Valve (variable resistance).** Flow through the valve follows the orifice equation, where the opening area $A(\phi)$ depends on a control variable $\phi$ such as activity frequency:
+With $e=P$, $f=Q_{\text{net}}$, and $\gamma$ absorbing the leak channel, this is the Capacitance update in §6. Analogy baselines and OpenModelica comparisons live in [analogies/](analogies/).
+
+**Valve (variable resistance).** One of the Resistance forms in §5.1; the orifice form is shown here. Opening area $A(\phi)$ depends on a control variable $\phi$ such as activity frequency:
 
 $$
 Q_{\text{valve}} = C_d \cdot A(\phi) \cdot \sqrt{\frac{2\,\Delta P}{\rho}}, \qquad \Delta P \ge 0
 $$
 
-For $\Delta P < 0$ the flow reverses: $Q = -C_d A(\phi)\sqrt{2|\Delta P|/\rho}$, or zero if a check valve is present.
+For $\Delta P < 0$ the flow reverses: $Q = -C_d A(\phi)\sqrt{2|\Delta P|/\rho}$, or zero if a `check` Resistance form is used.
 
 **Committed volume.** The volume passed to a downstream chamber over an interval is the net of valve flow and leakage:
 
@@ -116,7 +118,47 @@ $$
 V_{\text{committed}} = \int_{t_0}^{t_1} Q_{\text{valve}}(t)\,dt - \int_{t_0}^{t_1} Q_{\text{leak}}(t)\,dt
 $$
 
-The same structure (a source, a storage Element with a leak, and a variable resistance) describes a memory pool with a garbage collector and a request throttle, or a battery with a regulator. [examples/learning-simulator.md](examples/learning-simulator.md) maps it to behavioral reinforcement.
+The same structure (a source, a storage Element with a leak, and a variable resistance) describes a memory pool with a garbage collector and a request throttle, risk pressure with alarm recovery, or a battery with a regulator. [examples/learning-simulator.md](examples/learning-simulator.md) maps it to behavioral reinforcement.
+
+### 5.1 Resistance Forms (Scaling and Filtering)
+
+The default Resistance relation is linear, $e = R\,f$. Models may select a **resistance form** so the same Element type covers several useful nonlinear laws. Forms act as amplitude or rate shapers — analogous to soft high/low-pass behavior when composed with Capacitance — without inventing new Element types. The catalog is [`analogies/resistance-forms.json`](analogies/resistance-forms.json).
+
+| Form id | Governing idea | When it is useful |
+|---------|----------------|-------------------|
+| `linear` | $e = R\,f$ (Ohm / viscous damper) | Proportional drop; closed-form RC/RL with C or I; default for reliability trees |
+| `orifice` | $f = C_d A\,\mathrm{sign}(e)\sqrt{2|e|/\rho}$ | Small drives pass little flow; large spikes open up (amplitude-dependent gate) |
+| `check` | `linear` or `orifice` with $f \ge 0$ only | One-way habit lock, diode-like escalation, no backflow |
+| `deadzone` | $f=0$ for $\|e\| < e_0$, else linear/orifice | Ignore noise below a threshold; alarm only after material pressure |
+| `saturation` | $\|f\| \le f_{\max}$ on a linear/orifice core | Hard capacity / rate limit on throughput |
+| `power_law` | $f = k\,\mathrm{sign}(e)\,|e|^{\alpha}$ | Tunable sensitivity ($\alpha<1$ compressive, $\alpha>1$ expansive) |
+
+**Statistical / standard labels** for choosing a form (see the JSON `selection_hints`): Gaussian or small-signal regimes → `linear`; heavy-tailed or bursty spikes → `orifice` or `power_law` with $\alpha<1$; rare threshold crossings → `deadzone` (related to peaks-over-threshold thinking); hard SLOs / caps → `saturation`; irreversible transitions → `check`.
+
+Nonlinear forms require linearization or numerical integration about an operating point; the drift model in [06](06-drift-control-and-recalibration.md) tracks the approximation error. Engines that only implement `linear` must reject other forms or treat them as out of scope for that engine version.
+
+### 5.2 Port Direction and Sign Conventions
+
+Every one-port Element (R, C, I) has two ports. Signs are locked as follows so Assemblies do not transpose effort and flow:
+
+| Symbol | Definition |
+|--------|------------|
+| Port `p` (upstream) | Connection toward the higher-potential / source side of the branch |
+| Port `n` (downstream) | Connection toward the lower-potential / sink side of the branch |
+| Branch effort | $e := e_p - e_n$ |
+| Branch flow | $f > 0$ means flow through the Element from `p` to `n` |
+| Leak $\gamma$ | Dissipates stored state; does not reverse port orientation |
+
+For Transformers (two-port):
+
+| Symbol | Definition |
+|--------|------------|
+| Side 1 | Primary / input port pair |
+| Side 2 | Secondary / output port pair |
+| Ratio $n$ | $e_2 = n\,e_1$ and $f_1 = n\,f_2$ with $n > 0$ |
+| Power | $e_1 f_1 = e_2 f_2$ (positive into side 1 equals positive out of side 2 under this $f$ orientation) |
+
+Fittings that carry a ratio use the same $n$ convention. Engines must reject connections that leave port polarity unspecified when both ends declare ports. Closest OpenModelica one-port baseline uses the same $e = v_p - v_n$, $f = i_p$ orientation; TinkerDiff’s transformer omits Modelica’s leading minus on $i_2$ by defining $f_2$ positive *out* of side 2.
 
 ## 6. Element Interface (Language-Neutral)
 
@@ -124,20 +166,23 @@ Every Element exposes the same interface. Implementations may be classes, struct
 
 | Part | Content |
 |------|---------|
-| Parameters | One coefficient ($C$, $I$, $R$, or $n$); optional leak rate $\gamma$; optional capacity limit |
+| Parameters | One coefficient ($C$, $I$, $R$, or $n$); for Resistance, optional `resistance_form` (default `linear`); optional leak rate $\gamma$; optional capacity limit |
 | State | Effort $e$ and flow $f$, with initial values |
+| Ports | Upstream `p` and downstream `n` with the sign rules in §5.2 |
 | Inputs | Upstream effort and flow |
 | Update | A function of (state, inputs, $\Delta t$) returning new state |
 | Outputs | Effort and flow passed downstream, and the normalized saturation ratio |
 
-Continuous-time relations, including the optional leak/damping term $\gamma$:
+Continuous-time relations for the ideal linear cores, including the optional leak/damping term $\gamma$:
 
 $$
-\text{R: } e = R\,f \qquad
+\text{R (linear): } e = R\,f \qquad
 \text{C: } \dot{e} = \frac{f}{C} - \gamma e \qquad
 \text{I: } \dot{f} = \frac{e}{I} - \gamma f \qquad
 \text{TF: } e_2 = n\,e_1,\ f_1 = n\,f_2
 $$
+
+Other Resistance forms replace the linear R law as specified in §5.1; C, I, and TF cores stay as above.
 
 With $\gamma = 0$ these reduce to the base relations in §3. For $f = 0$ the capacitive state decays as $e(t) = e(0)e^{-\gamma t}$, the forgetting-curve behavior used in [examples/learning-simulator.md](examples/learning-simulator.md).
 

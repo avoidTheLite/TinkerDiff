@@ -45,9 +45,11 @@ engineering-components/            language-agnostic specification
   05-execution-model.md            operators, cost tiers, interval evaluation
   06-drift-control-and-recalibration.md  scheduled re-anchoring and accuracy accounting
   07-specification.md              how the schema, hydration, and conformance fit together
+  analogies/                       OpenModelica baselines and Resistance form catalog
   schema/                          JSON Schema (normative) and examples
   conformance/                     language-neutral test vectors
   examples/                        worked examples
+tools/openmodelica_compare/        named-component drift check vs MSL helpOM
 engine/                            reference engines (Go, Python); in progress
 ```
 

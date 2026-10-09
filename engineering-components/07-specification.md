@@ -125,6 +125,18 @@ Engines choose their own concurrency mechanisms, numerical libraries, and sampli
 
 Each vector in `conformance/vectors.json` has an `id`, the `spec` section defining the computation, an `input`, an `expected` output, and a `tolerance` (absolute or relative). Vectors cover Element updates, Beta statistics, fragility and competing-risk calculations, combination rules, matrix propagation (both modes), adaptation validation, drift accounting, the probability-flow solutions (the closed-form Gaussian and the Laplace-domain Green's function, which must agree under inverse transform), and two end-to-end evaluations of `schema/examples/cloud-service.json`.
 
+### 5.1 OpenModelica analogy compare
+
+Named equivalent models (resistor, capacitor, pressurized chamber, orifice, and so on) are recorded in [`analogies/openmodelica-baseline.json`](analogies/openmodelica-baseline.json) with the TinkerDiff equation, the closest MSL equation, and an `equation_delta` for intentional simplifications. Resistance form ids live in [`analogies/resistance-forms.json`](analogies/resistance-forms.json).
+
+Engines and contributors must keep those files in sync when constitutive laws or new named roles change. The offline check is:
+
+```bash
+python3 tools/openmodelica_compare/compare_openmodelica.py
+```
+
+Use `--fetch` to re-validate live OpenModelica helpOM info strings, and `--require-role <role>` when onboarding a new named component so the baseline cannot omit it.
+
 An engine's test suite should load the vectors, run each computation, and compare. The vectors are designed to be loaded by a small harness in any language; none requires a language-specific feature.
 
 ## 8. Versioning

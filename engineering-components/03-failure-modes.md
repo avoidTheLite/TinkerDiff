@@ -55,7 +55,7 @@ $$
 P_m(t) = P_{\text{baseline}} + \int_0^t \left(Q_{\text{degradation}}(\tau) - Q_{\text{leak}}(\tau)\right) d\tau
 $$
 
-Flows here are expressed in pressure-rate units, so the factor $K/V$ of the physical accumulator equation ([01](01-foundations.md) §5) is absorbed into $Q$.
+Flows here are expressed in pressure-rate units, so the factor $K/V$ of the pressurized-chamber equation ([01](01-foundations.md) §5) is absorbed into $Q$.
 
 **Statistical hazard.** Pressure maps to a failure probability through a Weibull-form curve with scale $\eta$ and shape $\beta_W$:
 

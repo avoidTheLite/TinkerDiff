@@ -59,11 +59,13 @@ The reinforcement matrix is realized as a manifold of compressible fluid (neural
 | Hydraulic part | Element type | Behavioral role |
 |----------------|--------------|-----------------|
 | Variable-displacement pump | Source (boundary input $\vec{u}$) | Forces volume into the network; displacement scales with task intensity and frequency |
-| Gas-charged accumulator | Capacitance (C) | Short-term staging area; absorbs high-pressure spikes and stores elastic energy |
-| Flow control valve | Resistance (R), variable | Gating/attention; opening area grows with activity frequency |
+| Pressurized chamber (simplified accumulator) | Capacitance (C), optional $\gamma$ | Short-term staging area; absorbs high-pressure spikes and stores elastic energy via bulk-modulus capacitance $C=V/K$ |
+| Flow control valve | Resistance (R), variable form | Gating/attention; opening area grows with activity frequency |
 | Fluid reservoir | Capacitance (C), large reference volume | Baseline pool of unallocated resources |
-| Check valve | Resistance (R), one-way | Habit lock; prevents backflow once a threshold is crossed |
+| Check valve | Resistance (R), `check` form | Habit lock; prevents backflow once a threshold is crossed |
 | Calibrated leak | Leak term $\gamma$ on a Capacitance | Forgetting curve; drains unreinforced volume back to the reservoir |
+
+The pressurized chamber is an ultra-simplified accumulator **role**: fixed volume, pressure from net inflow, optional leak. It is not a gas-charged bladder model; $C$ (and $\gamma$) are dials for the staging dynamics.
 
 ```
 [ Active Behavior (Pump) ] ---> high pressure / compression
@@ -92,7 +94,7 @@ High $\Delta P$ with low $\Delta V$ corresponds to effortful practice with littl
 - **Low frequency.** The valve opens briefly, a small volume enters, and it bleeds out through the leak.
 - **High frequency.** Sustained input holds the valve open, flow shifts from compressed/turbulent to high-volume laminar, and the pathway's volumetric capacity permanently expands.
 
-The governing relations are the accumulator and orifice equations in [01 Foundations §5](../01-foundations.md).
+The governing relations are the pressurized-chamber and orifice equations in [01 Foundations §5](../01-foundations.md).
 
 ### 3.3 Steady States and Viscosity
 

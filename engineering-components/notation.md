@@ -18,12 +18,17 @@ Math in this specification is written with `$ … $` for inline and `$$ … $$` 
 | Symbol | Meaning |
 |--------|---------|
 | $e$, $f$ | effort and flow (conjugate pair; power $= e \cdot f$) |
+| $e_p$, $e_n$ | effort at upstream port `p` and downstream port `n`; branch effort $e = e_p - e_n$ |
 | $C$, $I$, $R$ | capacitance, inductance, resistance coefficients |
-| $n$ | transformer ratio |
+| $n$ | transformer ratio ($e_2 = n e_1$, $f_1 = n f_2$, $n > 0$) |
 | $\gamma$ | leak/damping rate of an Element, in 1/s (`damping_leak_coefficient` in the schema) |
 | $P$, $Q$, $V$ | pressure, volumetric flow, volume (hydraulic domain) |
-| $K$ | bulk modulus |
+| $K$ | bulk modulus; chamber capacitance $C = V/K$ in the simplified accumulator role |
 | $\rho$, $C_d$, $A(\phi)$ | fluid density, discharge coefficient, opening area |
+
+**Port signs (normative).** Flow $f > 0$ through a one-port Element is from `p` to `n`. Transformer side 1 is primary/input; side 2 is secondary/output with $f_2$ positive *out* of side 2 so that $e_1 f_1 = e_2 f_2$. See [01 Foundations §5.2](01-foundations.md).
+
+**Names are roles.** Hydraulic/electrical/mechanical labels (chamber, resistor, spring) name equivalent behaviors, not full product models. Closest OpenModelica analogs and equation deltas are in [`analogies/openmodelica-baseline.json`](analogies/openmodelica-baseline.json).
 
 ## Risk and reliability
 

@@ -1,0 +1,119 @@
+{
+  "schema_version": "0.1.0",
+  "msl_version": "4.0.0",
+  "doc_base": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/",
+  "description": "Closest OpenModelica / MSL analogs for TinkerDiff Element roles. Names are pedagogical equivalents; equation_delta records intentional simplifications for non-physical modeling.",
+  "port_convention": {
+    "tinkerdiff": "e = e_p - e_n; f > 0 from p to n; TF: e2=n*e1, f1=n*f2 with f2 positive out of side 2",
+    "modelica_oneport": "v = p.v - n.v; i = p.i (OnePort / TwoPin)"
+  },
+  "components": [
+    {
+      "tinkerdiff_role": "resistance_linear",
+      "element_type": "resistance",
+      "resistance_form": "linear",
+      "modelica_path": "Modelica.Electrical.Analog.Basic.Resistor",
+      "doc_url": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/Modelica.Electrical.Analog.Basic.Resistor.html",
+      "tinkerdiff_equation": "e = R * f",
+      "modelica_equation": "v = R_actual * i",
+      "modelica_info_match": "i*R = v",
+      "equation_delta": "Ideal isothermal case (alpha=0) matches. MSL adds temperature-dependent R_actual and optional heat port; omitted here.",
+      "validation": "pass_ideal"
+    },
+    {
+      "tinkerdiff_role": "capacitance",
+      "element_type": "capacitance",
+      "modelica_path": "Modelica.Electrical.Analog.Basic.Capacitor",
+      "doc_url": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/Modelica.Electrical.Analog.Basic.Capacitor.html",
+      "tinkerdiff_equation": "der(e) = f/C - gamma*e",
+      "modelica_equation": "i = C * der(v)",
+      "modelica_info_match": "i = C * dv/dt",
+      "equation_delta": "gamma=0 matches. Nonzero gamma is parallel Conductor G=gamma*C (or Maxwell series spring-damper mechanically); not inside ideal Capacitor.",
+      "validation": "pass_ideal_gamma0",
+      "related_modelica_paths": [
+        "Modelica.Electrical.Analog.Basic.Conductor",
+        "Modelica.Mechanics.Translational.Components.Spring"
+      ]
+    },
+    {
+      "tinkerdiff_role": "inductance",
+      "element_type": "inductance",
+      "modelica_path": "Modelica.Electrical.Analog.Basic.Inductor",
+      "doc_url": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/Modelica.Electrical.Analog.Basic.Inductor.html",
+      "tinkerdiff_equation": "der(f) = e/I - gamma*f",
+      "modelica_equation": "L * der(i) = v",
+      "modelica_info_match": "v = L * di/dt",
+      "equation_delta": "I≡L and gamma=0 match. Nonzero gamma is series R=gamma*L damping; omitted from ideal Inductor.",
+      "validation": "pass_ideal_gamma0",
+      "related_modelica_paths": [
+        "Modelica.Electrical.Analog.Basic.Resistor",
+        "Modelica.Mechanics.Translational.Components.Mass"
+      ]
+    },
+    {
+      "tinkerdiff_role": "transformer",
+      "element_type": "transformer",
+      "modelica_path": "Modelica.Electrical.Analog.Ideal.IdealTransformer",
+      "doc_url": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/Modelica.Electrical.Analog.Ideal.IdealTransformer.html",
+      "tinkerdiff_equation": "e2 = n*e1; f1 = n*f2",
+      "modelica_equation": "v2 = v1/n; i2 = -i1*n",
+      "modelica_info_match": "i2 = -i1*n; v2 = v1/n",
+      "equation_delta": "Power-conserving two-port. MSL n is reciprocal if side labels match; MSL minus on i2 is port orientation. TinkerDiff locks f2 positive out of side 2 and n = e2/e1 > 0. Do not use Basic.Transformer (mutual L1,L2,M).",
+      "validation": "pass_with_convention",
+      "related_modelica_paths": [
+        "Modelica.Mechanics.Rotational.Components.IdealGear"
+      ]
+    },
+    {
+      "tinkerdiff_role": "resistance_orifice",
+      "element_type": "resistance",
+      "resistance_form": "orifice",
+      "modelica_path": "Modelica.Fluid.Fittings.SimpleGenericOrifice",
+      "doc_url": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/Modelica.Fluid.Fittings.SimpleGenericOrifice.html",
+      "tinkerdiff_equation": "f = Cd*A*sign(e)*sqrt(2*abs(e)/rho)",
+      "modelica_equation": "dp = 0.5*zeta*rho*v*|v|",
+      "modelica_info_match": "Δp = 0.5*ζ*ρ*v*|v|",
+      "equation_delta": "Same quadratic turbulent family; parameters (Cd,A) vs (zeta,D) differ. Intentional parameterization for role dials.",
+      "validation": "pass_family"
+    },
+    {
+      "tinkerdiff_role": "pressurized_chamber",
+      "element_type": "capacitance",
+      "modelica_path": "Modelica.Fluid.Vessels.ClosedVolume",
+      "doc_url": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/Modelica.Fluid.Vessels.ClosedVolume.html",
+      "tinkerdiff_equation": "der(P) = (K/V)*Q_net   (C=V/K; optional gamma leak)",
+      "modelica_equation": "der(m)=mb_flow; der(U)=Hb_flow+Qb_flow+Wb_flow; m=V*medium.d",
+      "modelica_info_match": "ideally mixed volume of constant size",
+      "equation_delta": "Ultra-simplified accumulator role: fixed V, bulk-modulus capacitance, no heat/medium energy balance. Reduces to TinkerDiff under isothermal liquid assumptions. Not a gas-charged bladder model.",
+      "validation": "intentional_simplification",
+      "related_modelica_paths": [
+        "Modelica.Fluid.Interfaces.PartialLumpedVolume",
+        "Modelica.Electrical.Analog.Basic.Capacitor",
+        "Modelica.Electrical.Analog.Basic.Conductor"
+      ]
+    },
+    {
+      "tinkerdiff_role": "mechanical_damper",
+      "element_type": "resistance",
+      "resistance_form": "linear",
+      "modelica_path": "Modelica.Mechanics.Translational.Components.Damper",
+      "doc_url": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/Modelica.Mechanics.Translational.Components.Damper.html",
+      "tinkerdiff_equation": "e = R * f",
+      "modelica_equation": "f = d * v_rel",
+      "modelica_info_match": "Linear, velocity dependent damper",
+      "equation_delta": "Direct match with R≡d under force–velocity effort–flow.",
+      "validation": "pass_ideal"
+    },
+    {
+      "tinkerdiff_role": "leaky_capacitance_dual",
+      "element_type": "capacitance",
+      "modelica_path": "Modelica.Mechanics.Translational.Components.SpringDamper",
+      "doc_url": "https://doc.modelica.org/Modelica%204.0.0/Resources/helpOM/Modelica.Mechanics.Translational.Components.SpringDamper.html",
+      "tinkerdiff_equation": "der(e) = f/C - gamma*e",
+      "modelica_equation": "f = c*(s_rel - s_rel0) + d*v_rel",
+      "modelica_info_match": "spring and damper element connected in parallel",
+      "equation_delta": "SpringDamper is Kelvin–Voigt (parallel). Leaky C / pressurized chamber with gamma is Maxwell (series spring–damper) ↔ electrical C∥G. Related pedagogy only — not algebraically identical.",
+      "validation": "related_not_identical"
+    }
+  ]
+}

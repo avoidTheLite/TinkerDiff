@@ -156,7 +156,7 @@
     },
 
     "Element": {
-      "description": "Atomic unit: one base relation (see 01-foundations). Capacitance e'=f/C-gamma*e; inductance f'=e/I-gamma*f; resistance e=R*f; transformer e2=n*e1, f1=n*f2.",
+      "description": "Atomic unit: one base relation (see 01-foundations). Capacitance e'=f/C-gamma*e; inductance f'=e/I-gamma*f; resistance form (default linear e=R*f); transformer e2=n*e1, f1=n*f2. Ports: e=e_p-e_n, f>0 from p to n.",
       "type": "object",
       "required": ["element_id", "element_type", "coefficient"],
       "additionalProperties": false,
@@ -164,6 +164,12 @@
         "element_id": { "$ref": "#/$defs/Identifier" },
         "element_type": { "enum": ["capacitance", "inductance", "resistance", "transformer"] },
         "coefficient": { "type": "number", "exclusiveMinimum": 0, "description": "C, I, R, or n depending on element_type." },
+        "resistance_form": {
+          "type": "string",
+          "enum": ["linear", "orifice", "check", "deadzone", "saturation", "power_law"],
+          "default": "linear",
+          "description": "Resistance law catalog id (analogies/resistance-forms.json). Meaningful only when element_type is resistance; default linear."
+        },
         "effort_unit": { "type": "string" },
         "flow_unit": { "type": "string" },
         "initial_state": {
